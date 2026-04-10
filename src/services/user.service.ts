@@ -9,6 +9,10 @@ export const userService = {
     return data;
   },
 
+  async createUser(matricula: string, password: string, role: 'ADMIN' | 'OPERATOR'): Promise<void> {
+    await api.post('/auth/register', { matricula, password, role });
+  },
+
   async deleteUser(id: string): Promise<void> {
     await api.delete(`/users/${id}`);
   }

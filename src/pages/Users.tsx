@@ -3,30 +3,54 @@ import { useUsers } from '../hooks/useUsers';
 import { Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
-import { useNavigate } from 'react-router-dom';
+import { Modal } from '../components/ui/Modal';
+import { Spinner } from '../components/ui/Spinner';
+import { toast } from 'sonner';
 import type { User } from '../types';
 
 export const Users = () => {
-  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [order, setOrder] = useState('desc');
   
+  const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
+  const [newUserFormData, setNewUserFormData] = useState<{
+    matricula: string;
+    password: string;
+    role: 'ADMIN' | 'OPERATOR';
+  }>({ matricula: '', password: '', role: 'OPERATOR' });
+  
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const { usersData, isLoading, deleteUser } = useUsers(page, limit, search, sortBy, order);
+  const { usersData, isLoading, deleteUser, createUser, isCreating } = useUsers(page, limit, search, sortBy, order);
 
   const handleSearch = (value: string) => {
     setSearch(value);
-    setPage(1); // Volta para a primeira página ao filtrar
+    setPage(1);
   };
 
   const handleLimitChange = (value: number) => {
     setLimit(value);
     setPage(1);
+  };
+
+  const handleCreateUser = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newUserFormData.matricula.length < 6 || newUserFormData.password.length < 6) {
+      toast.error('A matrícula e a senha devem possuir pelo menos 6 caracteres.');
+      return;
+    }
+
+    createUser(newUserFormData, {
+      onSuccess: () => {
+        setIsNewUserModalOpen(false);
+        setNewUserFormData({ matricula: '', password: '', role: 'OPERATOR' });
+      }
+    });
   };
 
   return (
@@ -53,7 +77,7 @@ export const Users = () => {
             />
           </div>
           <button 
-            onClick={() => navigate('/register')} 
+            onClick={() => setIsNewUserModalOpen(true)} 
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple hover:shadow-glow-purple transition-all w-full md:w-auto justify-center"
           >
             <UserPlus size={18} /> Novo Usuário
@@ -195,6 +219,65 @@ export const Users = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Novo Usuário */}
+      <Modal
+        isOpen={isNewUserModalOpen}
+        onClose={() => setIsNewUserModalOpen(false)}
+        title="Novo Usuário"
+      >
+        <form onSubmit={handleCreateUser} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
+              Matrícula <span className="text-primary-400 lowercase">(min. 6 chars)</span>
+            </label>
+            <input
+              type="text"
+              required
+              minLength={6}
+              placeholder="Digite a matrícula"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              value={newUserFormData.matricula}
+              onChange={(e) => setNewUserFormData({ ...newUserFormData, matricula: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
+              Senha Inicial <span className="text-primary-400 lowercase">(min. 6 chars)</span>
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              value={newUserFormData.password}
+              onChange={(e) => setNewUserFormData({ ...newUserFormData, password: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
+            <select
+              required
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer"
+              value={newUserFormData.role}
+              onChange={(e) => setNewUserFormData({ ...newUserFormData, role: e.target.value as 'ADMIN' | 'OPERATOR' })}
+            >
+              <option value="OPERATOR">OPERADOR (Padrão)</option>
+              <option value="ADMIN">ADMINISTRADOR</option>
+            </select>
+          </div>
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={isCreating}
+              className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+            >
+              {isCreating ? <Spinner className="text-white" /> : 'Criar Usuário'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       <ConfirmDialog
         isOpen={isConfirmOpen}

@@ -11,6 +11,22 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
     placeholderData: (previousData) => previousData,
   });
 
+  const createMutation = useMutation({
+    mutationFn: ({ matricula, password, role }: { matricula: string; password: string; role: 'ADMIN' | 'OPERATOR' }) => 
+      userService.createUser(matricula, password, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Novo usuário cadastrado com sucesso!');
+    },
+    onError: (error: any) => {
+      const backendMessage = error.response?.data?.message;
+      const message = Array.isArray(backendMessage) 
+        ? backendMessage.join(', ') 
+        : backendMessage || 'Erro ao cadastrar usuário';
+      toast.error(message);
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => userService.deleteUser(id),
     onSuccess: () => {
@@ -27,6 +43,8 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
     usersData: usersQuery.data,
     isLoading: usersQuery.isLoading,
     isError: usersQuery.isError,
+    createUser: createMutation.mutate,
+    isCreating: createMutation.isPending,
     deleteUser: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
   };
