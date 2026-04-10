@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, Tag, ArrowLeftRight, LogOut, UserPlus } from 'lucide-react';
+import { LayoutDashboard, Package, Tag, ArrowLeftRight, LogOut, Users as UsersIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Sidebar = () => {
@@ -53,15 +53,15 @@ export const Sidebar = () => {
         {/* Link administrativo exclusivo para ADMIN */}
         {isAdmin && (
           <NavLink
-            to="/register"
+            to="/users"
             className={({ isActive }) =>
               isActive
                 ? 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-primary-500 bg-primary-500/10 border border-primary-500/20 shadow-glow-purple transition-all duration-200'
                 : 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-all duration-200'
             }
           >
-            <UserPlus className="w-5 h-5 mr-3" />
-            <span>Cadastrar Usuário</span>
+            <UsersIcon className="w-5 h-5 mr-3" />
+            <span>Gerenciar Usuários</span>
           </NavLink>
         )}
       </nav>

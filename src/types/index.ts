@@ -1,7 +1,9 @@
 export interface User {
   id: string;
   matricula: string;
+  role: 'ADMIN' | 'OPERATOR';
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Category {
@@ -33,4 +35,15 @@ export interface StockMovement {
 
 export interface AuthResponse {
   token: string;
+  role: 'ADMIN' | 'OPERATOR';
+}
+
+export interface UsersResponse {
+  users: User[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

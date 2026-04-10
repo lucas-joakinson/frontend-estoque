@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Products } from './pages/Products';
 import { Categories } from './pages/Categories';
 import { StockMovements } from './pages/StockMovements';
+import { Users } from './pages/Users';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 const queryClient = new QueryClient({
@@ -41,8 +42,9 @@ function App() {
             <Route path="/stock" element={<StockMovements />} />
           </Route>
 
-          {/* Rota de registro protegida para ADMIN */}
-          <Route element={<ProtectedRoute title="Cadastrar Usuário" requiredRole="ADMIN" />}>
+          {/* Rotas administrativas exclusivas para ADMIN */}
+          <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
+            <Route path="/users" element={<Users />} />
             <Route path="/register" element={<Register />} />
           </Route>
 
