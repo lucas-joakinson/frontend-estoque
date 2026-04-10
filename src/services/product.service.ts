@@ -1,20 +1,19 @@
 import api from '../lib/api';
-import type { Product } from '../types';
+import type { ProductsResponse } from '../types';
 
 export const productService = {
-  async getAll(): Promise<Product[]> {
-    const { data } = await api.get('/products');
+  async listProducts(page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc'): Promise<ProductsResponse> {
+    const { data } = await api.get('/products', {
+      params: { page, limit, search, sortBy, order }
+    });
     return data;
   },
-  async create(name: string, sku: string, categoryId: string): Promise<Product> {
-    const { data } = await api.post('/products', { name, sku, categoryId });
-    return data;
+
+  async createProduct(name: string, categoryId: string, brand?: string): Promise<void> {
+    await api.post('/products', { name, categoryId, brand });
   },
-  async update(id: string, name: string, sku: string, categoryId: string): Promise<Product> {
-    const { data } = await api.put(`/products/${id}`, { name, sku, categoryId });
-    return data;
-  },
-  async delete(id: string): Promise<void> {
+
+  async deleteProduct(id: string): Promise<void> {
     await api.delete(`/products/${id}`);
-  },
+  }
 };

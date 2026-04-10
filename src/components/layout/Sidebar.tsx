@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, Tag, ArrowLeftRight, LogOut, Users as UsersIcon } from 'lucide-react';
+import { LayoutDashboard, Package, Tag, ClipboardList, LogOut, Users as UsersIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 export const Sidebar = () => {
@@ -18,9 +18,9 @@ export const Sidebar = () => {
 
   const links = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/products', label: 'Produtos', icon: Package },
+    { to: '/products', label: 'Itens (Modelos)', icon: Package },
     { to: '/categories', label: 'Categorias', icon: Tag },
-    { to: '/stock', label: 'Movimentações', icon: ArrowLeftRight },
+    { to: '/assets', label: 'Ativos (Patrimônio)', icon: ClipboardList },
   ];
 
   return (
@@ -30,7 +30,7 @@ export const Sidebar = () => {
           <span className="text-white font-mono font-bold text-lg">{'>_'}</span>
         </div>
         <h1 className="text-xl font-bold font-mono tracking-tight text-primary-400">
-          ESTOQUE
+          ATIVOS
         </h1>
       </div>
 

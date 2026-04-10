@@ -5,7 +5,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Products } from './pages/Products';
 import { Categories } from './pages/Categories';
-import { StockMovements } from './pages/StockMovements';
+import { Assets } from './pages/Assets';
 import { Users } from './pages/Users';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -37,8 +37,8 @@ function App() {
             <Route path="/categories" element={<Categories />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Histórico de Movimentações" />}>
-            <Route path="/stock" element={<StockMovements />} />
+          <Route element={<ProtectedRoute title="Gestão de Ativos (Patrimônio)" />}>
+            <Route path="/assets" element={<Assets />} />
           </Route>
 
           {/* Rotas administrativas exclusivas para ADMIN */}

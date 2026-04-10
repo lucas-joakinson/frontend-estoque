@@ -1,13 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services/category.service';
 import { toast } from 'sonner';
+import type { CategoriesResponse, Category } from '../types';
 
-export const useCategories = () => {
+export const useCategories = (page = 1, limit = 10, search = '') => {
   const queryClient = useQueryClient();
 
   const categoriesQuery = useQuery({
-    queryKey: ['categories'],
-    queryFn: categoryService.getAll,
+    queryKey: ['categories', page, limit, search],
+    queryFn: async () => {
+      const data = await categoryService.getAll(page, limit, search);
+      
+      // Normalização: se o backend retornar um array puro, encapsula no formato de paginação
+      if (Array.isArray(data)) {
+        return {
+          categories: data,
+          pagination: {
+            page: 1,
+            limit: data.length,
+            total: data.length,
+            totalPages: 1
+          }
+        } as CategoriesResponse;
+      }
+      
+      return data;
+    },
+    placeholderData: (previousData) => previousData,
   });
 
   const createMutation = useMutation({
@@ -44,7 +63,7 @@ export const useCategories = () => {
   });
 
   return {
-    categories: categoriesQuery.data ?? [],
+    categoriesData: categoriesQuery.data,
     isLoading: categoriesQuery.isLoading,
     createCategory: createMutation.mutate,
     updateCategory: updateMutation.mutate,

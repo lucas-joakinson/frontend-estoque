@@ -1,24 +1,28 @@
 import { useState } from 'react';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../hooks/useAuth';
-import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Skeleton } from '../components/ui/Skeleton';
 
 export const Categories = () => {
-  const { categories, isLoading, createCategory, updateCategory, deleteCategory } = useCategories();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const { categoriesData, isLoading, createCategory, updateCategory, deleteCategory } = useCategories(page, limit, searchTerm);
   const { isAdmin } = useAuth();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
   const [categoryName, setCategoryName] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+  };
 
   const handleOpenModal = (category?: { id: string; name: string }) => {
     if (category) {
@@ -34,16 +38,21 @@ export const Categories = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedCategory) {
-      updateCategory({ id: selectedCategory.id, name: categoryName });
+      updateCategory({ id: selectedCategory.id, name: categoryName }, {
+        onSuccess: () => setIsModalOpen(false)
+      });
     } else {
-      createCategory(categoryName);
+      createCategory(categoryName, {
+        onSuccess: () => setIsModalOpen(false)
+      });
     }
-    setIsModalOpen(false);
   };
 
   const handleDelete = () => {
     if (selectedCategory) {
-      deleteCategory(selectedCategory.id);
+      deleteCategory(selectedCategory.id, {
+        onSuccess: () => setIsConfirmOpen(false)
+      });
     }
   };
 
@@ -67,7 +76,7 @@ export const Categories = () => {
               placeholder="Buscar categorias..."
               className="w-full pl-12 pr-4 py-3 rounded-2xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all font-mono text-sm"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
           {isAdmin && (
@@ -98,8 +107,8 @@ export const Categories = () => {
                     <td className="px-6 py-4 flex justify-end gap-2"><Skeleton className="h-8 w-8" /><Skeleton className="h-8 w-8" /></td>
                   </tr>
                 ))
-              ) : filteredCategories.length > 0 ? (
-                filteredCategories.map((c) => (
+              ) : categoriesData?.categories && categoriesData.categories.length > 0 ? (
+                categoriesData.categories.map((c) => (
                   <tr key={c.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
                     <td className="px-6 py-4 text-sm text-text-primary font-medium">{c.name}</td>
                     <td className="px-6 py-4">
@@ -136,6 +145,30 @@ export const Categories = () => {
           </table>
         </div>
       </div>
+
+      {categoriesData?.pagination && categoriesData.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
+          <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
+            Página {page} de {categoriesData.pagination.totalPages}
+          </span>
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              disabled={page === categoriesData.pagination.totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <Modal
         isOpen={isModalOpen}

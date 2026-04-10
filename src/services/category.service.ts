@@ -1,9 +1,14 @@
 import api from '../lib/api';
-import type { Category } from '../types';
+import type { Category, CategoriesResponse } from '../types';
 
 export const categoryService = {
-  async getAll(): Promise<Category[]> {
-    const { data } = await api.get('/categories');
+  async getAll(page?: number, limit?: number, search?: string): Promise<CategoriesResponse> {
+    const params: any = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    if (search) params.search = search;
+
+    const { data } = await api.get('/categories', { params });
     return data;
   },
   async create(name: string): Promise<Category> {
