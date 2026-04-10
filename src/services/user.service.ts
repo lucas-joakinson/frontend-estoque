@@ -15,5 +15,9 @@ export const userService = {
 
   async deleteUser(id: string): Promise<void> {
     await api.delete(`/users/${id}`);
+  },
+
+  async updateUser(id: string, data: { password?: string; role?: 'ADMIN' | 'OPERATOR' }): Promise<void> {
+    await api.patch(`/users/${id}`, data);
   }
 };

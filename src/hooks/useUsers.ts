@@ -39,6 +39,22 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { password?: string; role?: 'ADMIN' | 'OPERATOR' } }) => 
+      userService.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Usuário atualizado com sucesso!');
+    },
+    onError: (error: any) => {
+      const backendMessage = error.response?.data?.message;
+      const message = Array.isArray(backendMessage) 
+        ? backendMessage.join(', ') 
+        : backendMessage || 'Erro ao atualizar usuário';
+      toast.error(message);
+    },
+  });
+
   return {
     usersData: usersQuery.data,
     isLoading: usersQuery.isLoading,
@@ -47,5 +63,7 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
     isCreating: createMutation.isPending,
     deleteUser: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
+    updateUser: updateMutation.mutate,
+    isUpdating: updateMutation.isPending,
   };
 };

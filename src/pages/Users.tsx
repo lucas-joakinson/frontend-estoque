@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUsers } from '../hooks/useUsers';
-import { Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, Edit2 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
@@ -22,10 +22,16 @@ export const Users = () => {
     role: 'ADMIN' | 'OPERATOR';
   }>({ matricula: '', password: '', role: 'OPERATOR' });
   
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editUserFormData, setEditUserFormData] = useState<{
+    password: string;
+    role: 'ADMIN' | 'OPERATOR';
+  }>({ password: '', role: 'OPERATOR' });
+
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const { usersData, isLoading, deleteUser, createUser, isCreating } = useUsers(page, limit, search, sortBy, order);
+  const { usersData, isLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(page, limit, search, sortBy, order);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -49,6 +55,33 @@ export const Users = () => {
       onSuccess: () => {
         setIsNewUserModalOpen(false);
         setNewUserFormData({ matricula: '', password: '', role: 'OPERATOR' });
+      }
+    });
+  };
+
+  const handleEditUser = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedUser) return;
+
+    if (editUserFormData.password && editUserFormData.password.length < 6) {
+      toast.error('A nova senha deve possuir pelo menos 6 caracteres.');
+      return;
+    }
+
+    const data: { password?: string; role?: 'ADMIN' | 'OPERATOR' } = {
+      role: editUserFormData.role
+    };
+
+    if (editUserFormData.password) {
+      data.password = editUserFormData.password;
+    }
+
+    updateUser({ id: selectedUser.id, data }, {
+      onSuccess: () => {
+        setIsEditUserModalOpen(false);
+        setEditUserFormData({ password: '', role: 'OPERATOR' });
+        setSelectedUser(null);
       }
     });
   };
@@ -147,7 +180,10 @@ export const Users = () => {
                     <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-6 w-20" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
-                    <td className="px-6 py-4 flex justify-end"><Skeleton className="h-8 w-8" /></td>
+                    <td className="px-6 py-4 flex justify-end gap-2">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </td>
                   </tr>
                 ))
               ) : usersData?.users && usersData.users.length > 0 ? (
@@ -167,18 +203,31 @@ export const Users = () => {
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-2">
                         {user.matricula !== 'admin' && (
-                          <button
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setIsConfirmOpen(true);
-                            }}
-                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 hover:border-red-500/30 transition-all"
-                            title="Remover Usuário"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setEditUserFormData({ password: '', role: user.role });
+                                setIsEditUserModalOpen(true);
+                              }}
+                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 hover:border-primary-500/30 transition-all"
+                              title="Editar Usuário"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setIsConfirmOpen(true);
+                              }}
+                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 hover:border-red-500/30 transition-all"
+                              title="Remover Usuário"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -274,6 +323,53 @@ export const Users = () => {
               className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
             >
               {isCreating ? <Spinner className="text-white" /> : 'Criar Usuário'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal de Edição de Usuário */}
+      <Modal
+        isOpen={isEditUserModalOpen}
+        onClose={() => {
+          setIsEditUserModalOpen(false);
+          setSelectedUser(null);
+        }}
+        title={`Editar Usuário: ${selectedUser?.matricula}`}
+      >
+        <form onSubmit={handleEditUser} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
+              Nova Senha <span className="text-primary-400 lowercase">(opcional - min. 6 chars)</span>
+            </label>
+            <input
+              type="password"
+              minLength={6}
+              placeholder="Deixe em branco para manter"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              value={editUserFormData.password}
+              onChange={(e) => setEditUserFormData({ ...editUserFormData, password: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
+            <select
+              required
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer"
+              value={editUserFormData.role}
+              onChange={(e) => setEditUserFormData({ ...editUserFormData, role: e.target.value as 'ADMIN' | 'OPERATOR' })}
+            >
+              <option value="OPERATOR">OPERADOR</option>
+              <option value="ADMIN">ADMINISTRADOR</option>
+            </select>
+          </div>
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={isUpdating}
+              className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+            >
+              {isUpdating ? <Spinner className="text-white" /> : 'Salvar Alterações'}
             </button>
           </div>
         </form>
