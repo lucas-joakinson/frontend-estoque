@@ -37,9 +37,11 @@ export interface Asset {
 export interface AssetHistory {
   id: string;
   assetId: string;
-  status: AssetStatus;
-  location: string;
-  notes?: string;
+  oldStatus?: AssetStatus;
+  newStatus: AssetStatus;
+  oldLocation?: string;
+  newLocation: string;
+  observation?: string;
   userId: string;
   user: User;
   createdAt: string;

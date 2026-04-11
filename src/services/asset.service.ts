@@ -4,8 +4,6 @@ import type { AssetsResponse, Asset, AssetHistory, AssetStatus } from '../types'
 export const assetService = {
   async listAssets(page?: number, limit?: number, search?: string, sortBy?: string, order?: string): Promise<AssetsResponse> {
     const params: any = {};
-    
-    // Só envia se não for o valor padrão ou se for explicitamente solicitado
     if (page && page > 1) params.page = page;
     if (limit && limit !== 10) params.limit = limit;
     if (search) params.search = search;
@@ -26,12 +24,29 @@ export const assetService = {
   },
 
   async updateAsset(id: string, data: { status?: AssetStatus; location?: string; notes?: string }): Promise<void> {
-    await api.patch(`/assets/${id}`, data);
+    const payload = {
+      ...data,
+      observation: data.notes 
+    };
+    await api.patch(`/assets/${id}`, payload);
   },
 
   async getAssetHistory(id: string): Promise<AssetHistory[]> {
-    const { data } = await api.get(`/assets/${id}/history`);
-    return data;
+    try {
+      const response = await api.get(`/assets/${id}/history`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        try {
+          const altResponse = await api.get(`/assets/history/${id}`);
+          return altResponse.data;
+        } catch (altError) {
+          console.error(`Falha total ao buscar histórico. O Backend não responde em /assets/:id/history nem em /assets/history/:id`);
+          return [];
+        }
+      }
+      throw error;
+    }
   },
 
   async deleteAsset(id: string): Promise<void> {

@@ -41,7 +41,6 @@ function App() {
             <Route path="/assets" element={<Assets />} />
           </Route>
 
-          {/* Rotas administrativas exclusivas para ADMIN */}
           <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
             <Route path="/users" element={<Users />} />
           </Route>

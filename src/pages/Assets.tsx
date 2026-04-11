@@ -350,32 +350,52 @@ export const Assets = () => {
           ) : history && history.length > 0 ? (
             history.map((entry, i) => (
               <div key={entry.id} className={`relative pl-8 ${i !== history.length - 1 ? 'pb-8 border-l border-border-primary' : ''}`}>
-                <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${STATUS_LABELS[entry.status].color.split(' ')[0]}`} />
+                <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${STATUS_LABELS[entry.newStatus]?.color.split(' ')[0] || 'bg-primary-500'}`} />
                 <div className="flex flex-col gap-3 p-4 rounded-2xl bg-hover-bg border border-border-primary">
                   <div className="flex items-center justify-between">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[entry.status].color}`}>
-                      {STATUS_LABELS[entry.status].label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {entry.oldStatus && entry.oldStatus !== entry.newStatus && (
+                        <>
+                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono opacity-50 border ${STATUS_LABELS[entry.oldStatus]?.color}`}>
+                            {STATUS_LABELS[entry.oldStatus]?.label}
+                          </span>
+                          <span className="text-text-secondary text-[10px]">→</span>
+                        </>
+                      )}
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[entry.newStatus]?.color}`}>
+                        {STATUS_LABELS[entry.newStatus]?.label}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary uppercase">
                       <Calendar size={12} />
                       {new Date(entry.createdAt).toLocaleString()}
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-xs font-mono text-text-primary">
-                    <MapPin size={14} className="text-primary-400" />
-                    {entry.location}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-xs font-mono text-text-primary">
+                      <MapPin size={14} className="text-primary-400" />
+                      {entry.oldLocation && entry.oldLocation !== entry.newLocation ? (
+                        <span className="flex items-center gap-1">
+                          <span className="opacity-50">{entry.oldLocation}</span>
+                          <span className="text-text-secondary text-[10px]">→</span>
+                          <span>{entry.newLocation}</span>
+                        </span>
+                      ) : (
+                        entry.newLocation
+                      )}
+                    </div>
                   </div>
 
-                  {entry.notes && (
+                  {entry.observation && (
                     <div className="p-3 rounded-xl bg-surface/50 border border-border-primary text-xs text-text-secondary italic">
-                      "{entry.notes}"
+                      "{entry.observation}"
                     </div>
                   )}
 
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary/60 uppercase">
                     <User size={12} />
-                    Matrícula: {entry.user.matricula}
+                    Modificado por: {entry.user?.matricula || 'Sistema'}
                   </div>
                 </div>
               </div>

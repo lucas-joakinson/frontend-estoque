@@ -11,7 +11,6 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
     queryFn: async () => {
       const data = await categoryService.getAll(page, limit, search);
       
-      // Normalização: se o backend retornar um array puro, encapsula no formato de paginação
       if (Array.isArray(data)) {
         return {
           categories: data,
