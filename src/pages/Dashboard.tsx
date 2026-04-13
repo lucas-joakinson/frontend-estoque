@@ -18,6 +18,24 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string; hex: st
   DESCARTADO: { label: 'Descartado', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', hex: '#71717a' },
 };
 
+const StatCard = ({ label, value, icon: Icon, loading }: { label: string; value: number; icon: any; loading: boolean }) => (
+  <div className="p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group">
+    <div className="w-12 h-12 rounded-2xl bg-primary-500/10 flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform">
+      <Icon size={24} />
+    </div>
+    {loading ? (
+      <Skeleton className="h-10 w-24 mt-4" />
+    ) : (
+      <h3 className="text-3xl font-bold font-mono text-text-primary mt-4 tracking-tight">
+        {value}
+      </h3>
+    )}
+    <p className="text-xs font-mono text-text-secondary uppercase tracking-widest mt-1">
+      {label}
+    </p>
+  </div>
+);
+
 export const Dashboard = () => {
   const { productsData, isLoading: loadingProducts } = useProducts(1, 1);
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 100);
@@ -82,21 +100,7 @@ export const Dashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
-          <div key={i} className="p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group">
-            <div className="w-12 h-12 rounded-2xl bg-primary-500/10 flex items-center justify-center text-primary-400 group-hover:scale-110 transition-transform">
-              <stat.icon size={24} />
-            </div>
-            {stat.loading ? (
-              <Skeleton className="h-10 w-24 mt-4" />
-            ) : (
-              <h3 className="text-3xl font-bold font-mono text-text-primary mt-4 tracking-tight">
-                {stat.value}
-              </h3>
-            )}
-            <p className="text-xs font-mono text-text-secondary uppercase tracking-widest mt-1">
-              {stat.label}
-            </p>
-          </div>
+          <StatCard key={i} {...stat} />
         ))}
       </div>
 
@@ -291,4 +295,3 @@ export const Dashboard = () => {
     </div>
   );
 };
-
