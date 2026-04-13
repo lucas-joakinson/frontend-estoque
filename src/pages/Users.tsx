@@ -15,6 +15,7 @@ export const Users = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('');
   const debouncedSearch = useDebounce(search, 500);
   const [sortBy, setSortBy] = useState('createdAt');
   const [order, setOrder] = useState('desc');
@@ -24,7 +25,14 @@ export const Users = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const { usersData, isLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(page, limit, debouncedSearch, sortBy, order);
+  const { usersData, isLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(
+    page, 
+    limit, 
+    debouncedSearch, 
+    roleFilter,
+    sortBy, 
+    order
+  );
 
   const {
     register: registerCreate,
@@ -61,8 +69,19 @@ export const Users = () => {
     setPage(1);
   };
 
+  const handleRoleFilterChange = (value: string) => {
+    setRoleFilter(value);
+    setPage(1);
+  };
+
   const handleLimitChange = (value: number) => {
     setLimit(value);
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setSearch('');
+    setRoleFilter('');
     setPage(1);
   };
 
@@ -131,31 +150,57 @@ export const Users = () => {
       </div>
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-text-secondary">
-            <SlidersHorizontal size={16} />
-            <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <SlidersHorizontal size={16} />
+              <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
+            </div>
+            <div className="flex gap-2">
+              {[10, 20, 50].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => handleLimitChange(num)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                    limit === num 
+                      ? 'bg-primary-500 text-white shadow-glow-purple' 
+                      : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {[10, 20, 50].map((num) => (
-              <button
-                key={num}
-                onClick={() => handleLimitChange(num)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
-                  limit === num 
-                    ? 'bg-primary-500 text-white shadow-glow-purple' 
-                    : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'
-                }`}
-              >
-                {num}
-              </button>
-            ))}
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <span className="text-xs font-mono uppercase tracking-widest">Permissão:</span>
+            </div>
+            <select
+              className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
+              value={roleFilter}
+              onChange={(e) => handleRoleFilterChange(e.target.value)}
+            >
+              <option value="">Todas</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="OPERATOR">OPERADOR</option>
+            </select>
           </div>
+
+          {(search || roleFilter) && (
+            <button
+              onClick={clearFilters}
+              className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
+            >
+              Limpar Filtros
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 text-text-secondary">
-            <span className="text-xs font-mono uppercase tracking-widest">Ordenar por:</span>
+            <span className="text-xs font-mono uppercase tracking-widest">Ordenar:</span>
           </div>
           <select
             className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50"
