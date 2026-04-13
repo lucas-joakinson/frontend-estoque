@@ -3,8 +3,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
+import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
-import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
@@ -25,6 +26,8 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 export const Assets = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('');
   const debouncedSearch = useDebounce(search, 500);
   const [isExporting, setIsExporting] = useState(false);
   
@@ -37,8 +40,15 @@ export const Assets = () => {
 
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
 
-  const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(page, 10, debouncedSearch);
+  const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(
+    page, 
+    10, 
+    debouncedSearch, 
+    statusFilter, 
+    categoryFilter
+  );
   const { productsData } = useProducts(1, 100);
+  const { categoriesData } = useCategories(1, 100);
   const { data: history, isLoading: isLoadingHistory } = useAssetHistory(assetForHistory?.id || null);
 
   const {
@@ -77,13 +87,21 @@ export const Assets = () => {
     setPage(1);
   };
 
+  const clearFilters = () => {
+    setSearch('');
+    setStatusFilter('');
+    setCategoryFilter('');
+    setPage(1);
+  };
+
   const handleExport = async () => {
     try {
       setIsExporting(true);
       await assetService.exportAssets();
       toast.success('Relatório gerado com sucesso!');
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao exportar dados');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro ao exportar dados';
+      toast.error(message);
     } finally {
       setIsExporting(false);
     }
@@ -147,6 +165,45 @@ export const Assets = () => {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Filtros Avançados */}
+      <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center gap-4 shadow-sm">
+        <div className="flex items-center gap-2 text-text-secondary font-mono text-[10px] uppercase tracking-widest px-2">
+          <Filter size={14} className="text-primary-400" />
+          Filtros:
+        </div>
+        
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
+        >
+          <option value="">Todos os Status</option>
+          {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
+            <option key={val} value={val}>{label}</option>
+          ))}
+        </select>
+
+        <select
+          value={categoryFilter}
+          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+          className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
+        >
+          <option value="">Todas as Categorias</option>
+          {categoriesData?.categories.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.name}</option>
+          ))}
+        </select>
+
+        {(search || statusFilter || categoryFilter) && (
+          <button
+            onClick={clearFilters}
+            className="flex items-center gap-2 px-4 py-2 text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
+          >
+            Limpar Filtros
+          </button>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">

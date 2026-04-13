@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '../services/user.service';
 import { toast } from 'sonner';
+import type { UsersResponse } from '../types';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string | string[];
+    };
+  };
+}
 
 export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc') => {
   const queryClient = useQueryClient();
@@ -19,10 +28,10 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
             total: data.length,
             totalPages: 1
           }
-        } as any;
+        } as UsersResponse;
       }
       
-      return data;
+      return data as UsersResponse;
     },
     placeholderData: (previousData) => previousData,
   });
@@ -34,7 +43,7 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Novo usuário cadastrado com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const backendMessage = error.response?.data?.message;
       const message = Array.isArray(backendMessage) 
         ? backendMessage.join(', ') 
@@ -49,8 +58,8 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário removido com sucesso!');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao remover usuário';
+    onError: (error: ApiError) => {
+      const message = (error.response?.data?.message as string) || 'Erro ao remover usuário';
       toast.error(message);
     },
   });
@@ -62,7 +71,7 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Usuário atualizado com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const backendMessage = error.response?.data?.message;
       const message = Array.isArray(backendMessage) 
         ? backendMessage.join(', ') 

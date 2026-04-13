@@ -1,6 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '../services/product.service';
 import { toast } from 'sonner';
+import type { ProductsResponse } from '../types';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc') => {
   const queryClient = useQueryClient();
@@ -19,10 +28,10 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
             total: data.length,
             totalPages: 1
           }
-        } as any;
+        } as ProductsResponse;
       }
       
-      return data;
+      return data as ProductsResponse;
     },
     placeholderData: (previousData) => previousData,
   });
@@ -34,7 +43,7 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Novo modelo de item cadastrado!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const message = error.response?.data?.message || 'Erro ao cadastrar produto';
       toast.error(message);
     },
@@ -46,7 +55,7 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
       queryClient.invalidateQueries({ queryKey: ['products'] });
       toast.success('Modelo de item removido!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       const message = error.response?.data?.message || 'Erro ao remover produto';
       toast.error(message);
     },

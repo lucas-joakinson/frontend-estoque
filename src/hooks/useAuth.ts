@@ -1,38 +1,33 @@
 import { useMutation } from '@tanstack/react-query';
 import { authService } from '../services/auth.service';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import type { LoginInput } from '../schemas/auth.schema';
 
 export const useAuth = () => {
   const navigate = useNavigate();
-  const role = localStorage.getItem('role');
-  const isAdmin = role === 'ADMIN';
 
   const loginMutation = useMutation({
-    mutationFn: ({ matricula, password }: { matricula: string; password: string }) =>
-      authService.login(matricula, password),
+    mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
     onSuccess: (data) => {
       localStorage.setItem('token', data.token);
       localStorage.setItem('role', data.role);
-      toast.success('Login realizado com sucesso!');
+      toast.success('Bem-vindo ao sistema!');
       navigate('/dashboard');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao realizar login';
-      toast.error(message);
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message || 'Erro ao realizar login');
     },
   });
 
   const registerMutation = useMutation({
-    mutationFn: ({ matricula, password }: { matricula: string; password: string }) =>
-      authService.register(matricula, password),
+    mutationFn: (data: LoginInput) => authService.register(data.matricula, data.password),
     onSuccess: () => {
-      toast.success('Conta criada! Faça login.');
+      toast.success('Conta criada com sucesso! Faça login para acessar.');
       navigate('/login');
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.message || 'Erro ao criar conta';
-      toast.error(message);
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message || 'Erro ao criar conta');
     },
   });
 
@@ -40,8 +35,10 @@ export const useAuth = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     navigate('/login');
-    toast.success('Sessão encerrada.');
+    toast.info('Sessão encerrada.');
   };
+
+  const isAdmin = localStorage.getItem('role') === 'ADMIN';
 
   return {
     login: loginMutation.mutate,
@@ -49,7 +46,6 @@ export const useAuth = () => {
     register: registerMutation.mutate,
     isRegistering: registerMutation.isPending,
     logout,
-    role,
     isAdmin,
   };
 };

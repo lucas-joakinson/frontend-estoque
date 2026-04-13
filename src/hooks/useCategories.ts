@@ -1,7 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services/category.service';
 import { toast } from 'sonner';
-import type { CategoriesResponse, Category } from '../types';
+import type { CategoriesResponse } from '../types';
+
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
 
 export const useCategories = (page = 1, limit = 10, search = '') => {
   const queryClient = useQueryClient();
@@ -23,7 +31,7 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
         } as CategoriesResponse;
       }
       
-      return data;
+      return data as CategoriesResponse;
     },
     placeholderData: (previousData) => previousData,
   });
@@ -34,7 +42,7 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Categoria criada com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Erro ao criar categoria');
     },
   });
@@ -45,7 +53,7 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Categoria atualizada com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Erro ao atualizar categoria');
     },
   });
@@ -56,7 +64,7 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Categoria excluída com sucesso!');
     },
-    onError: (error: any) => {
+    onError: (error: ApiError) => {
       toast.error(error.response?.data?.message || 'Erro ao excluir categoria');
     },
   });
