@@ -24,8 +24,8 @@ export const assetService = {
     return response.data;
   },
 
-  async updateAsset(id: string, data: { status: AssetStatus; location: string; notes?: string }): Promise<Asset> {
-    const response = await api.post(`/assets/${id}`, data);
+  async updateAsset(id: string, data: { status: AssetStatus; location: string; observation?: string }): Promise<Asset> {
+    const response = await api.patch(`/assets/${id}`, data);
     return response.data;
   },
 

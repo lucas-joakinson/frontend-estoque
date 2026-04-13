@@ -5,7 +5,7 @@ import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
-import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter } from 'lucide-react';
+import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter, CheckSquare, X, ArrowRight, Settings2 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import type { Asset, AssetStatus, Product } from '../types';
 import { assetService } from '../services/asset.service';
 import { createAssetSchema, updateAssetSchema, type CreateAssetInput, type UpdateAssetInput } from '../schemas/asset.schema';
+import { useQueryClient } from '@tanstack/react-query';
 
 const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
   DISPONIVEL: { label: 'Disponível', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -24,6 +25,7 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 };
 
 export const Assets = () => {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -39,6 +41,13 @@ export const Assets = () => {
   const [assetForHistory, setAssetForHistory] = useState<Asset | null>(null);
 
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+
+  // Estados para Ações em Massa
+  const [selectedIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const [bulkData, setBulkData] = useState({ status: '' as AssetStatus | '', location: '', notes: 'Atualização em massa' });
 
   const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(
     page, 
@@ -126,8 +135,115 @@ export const Assets = () => {
     });
   };
 
+  // Lógica de Seleção em Massa
+  const toggleSelectAll = () => {
+    if (selectedIds.length === (assetsData?.assets.length || 0)) {
+      setSelectedAssetIds([]);
+    } else {
+      setSelectedAssetIds(assetsData?.assets.map(a => a.id) || []);
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    setSelectedAssetIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedIds.length === 0) return;
+    
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Atualizando ${selectedIds.length} ativos...`);
+    
+    try {
+      let successCount = 0;
+      for (const id of selectedIds) {
+        const data: any = {};
+        if (bulkData.status) data.status = bulkData.status;
+        if (bulkData.location) data.location = bulkData.location;
+        if (bulkData.notes) data.notes = bulkData.notes;
+
+        if (Object.keys(data).length > 0) {
+          await assetService.updateAsset(id, data);
+          successCount++;
+        }
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast.success(`${successCount} ativos atualizados com sucesso!`, { id: toastId });
+      setSelectedAssetIds([]);
+      setIsBulkUpdateModalOpen(false);
+      setBulkData({ status: '', location: '', notes: 'Atualização em massa' });
+    } catch (error) {
+      toast.error('Ocorreu um erro durante a atualização em massa.', { id: toastId });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Excluindo ${selectedIds.length} ativos...`);
+    
+    try {
+      for (const id of selectedIds) {
+        await assetService.deleteAsset(id);
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast.success(`${selectedIds.length} ativos removidos com sucesso!`, { id: toastId });
+      setSelectedAssetIds([]);
+      setIsBulkDeleteConfirmOpen(false);
+    } catch (error) {
+      toast.error('Erro ao excluir alguns ativos. Verifique as permissões.', { id: toastId });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 relative">
+      {/* Barra de Ações em Massa (Floating) */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400">
+            <div className="flex items-center gap-2 border-r border-primary-400 pr-6">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold font-mono">
+                {selectedIds.length}
+              </div>
+              <span className="text-sm font-bold uppercase tracking-wider font-mono">Selecionados</span>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsBulkUpdateModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Settings2 size={16} /> Alterar Status/Local
+              </button>
+              
+              <button 
+                onClick={() => setIsBulkDeleteConfirmOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Trash2 size={16} /> Excluir
+              </button>
+              
+              <button 
+                onClick={() => setSelectedAssetIds([])}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                title="Cancelar seleção"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-text-primary leading-tight">Gestão de Ativos</h2>
@@ -211,6 +327,14 @@ export const Assets = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
+                <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-border-primary bg-background text-primary-500 focus:ring-primary-500/50"
+                    checked={assetsData?.assets && assetsData.assets.length > 0 && selectedIds.length === assetsData.assets.length}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Patrimônio</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item / Marca</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Categoria</th>
@@ -223,6 +347,7 @@ export const Assets = () => {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-6 w-16 mx-auto" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -233,7 +358,15 @@ export const Assets = () => {
                 ))
               ) : assetsData?.assets && assetsData.assets.length > 0 ? (
                 assetsData.assets.map((asset) => (
-                  <tr key={asset.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
+                  <tr key={asset.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group ${selectedIds.includes(asset.id) ? 'bg-primary-500/5' : ''}`}>
+                    <td className="px-6 py-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-border-primary bg-background text-primary-500 focus:ring-primary-500/50 cursor-pointer"
+                        checked={selectedIds.includes(asset.id)}
+                        onChange={() => toggleSelectOne(asset.id)}
+                      />
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className="px-3 py-1 rounded bg-hover-bg border border-border-primary font-mono font-bold text-primary-400 text-xs">
                         {asset.patrimonio}
@@ -293,7 +426,7 @@ export const Assets = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
+                  <td colSpan={7} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
                     Nenhum ativo encontrado.
                   </td>
                 </tr>
@@ -437,6 +570,59 @@ export const Assets = () => {
         </form>
       </Modal>
 
+      {/* Modal de Atualização em Massa */}
+      <Modal isOpen={isBulkUpdateModalOpen} onClose={() => !isProcessingBulk && setIsBulkUpdateModalOpen(false)} title={`Atualizar ${selectedIds.length} Ativos`}>
+        <div className="space-y-6">
+          <div className="p-4 rounded-xl bg-primary-500/10 border border-primary-500/20 text-xs font-mono text-primary-400">
+            Os campos deixados em branco não serão alterados nos ativos selecionados.
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Novo Status</label>
+              <select
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                value={bulkData.status}
+                onChange={(e) => setBulkData({ ...bulkData, status: e.target.value as AssetStatus })}
+              >
+                <option value="">Manter atual...</option>
+                {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nova Localização</label>
+              <input
+                type="text"
+                placeholder="Manter atual..."
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                value={bulkData.location || ''}
+                onChange={(e) => setBulkData({ ...bulkData, location: e.target.value })}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observação do Histórico</label>
+            <textarea
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none"
+              placeholder="Descreva o motivo desta alteração em massa..."
+              value={bulkData.notes || ''}
+              onChange={(e) => setBulkData({ ...bulkData, notes: e.target.value })}
+            />
+          </div>
+
+          <button 
+            onClick={handleBulkUpdate}
+            disabled={isProcessingBulk || (!bulkData.status && !bulkData.location)}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isProcessingBulk ? <Spinner /> : `Atualizar ${selectedIds.length} Itens`}
+          </button>
+        </div>
+      </Modal>
+
       {/* Modal de Histórico */}
       <Modal 
         isOpen={isHistoryModalOpen} 
@@ -522,6 +708,14 @@ export const Assets = () => {
         onConfirm={() => selectedAsset && deleteAsset(selectedAsset.id)}
         title="Remover Ativo"
         description={`Tem certeza que deseja remover o patrimônio ${selectedAsset?.patrimonio} do sistema? Esta ação é irreversível e removerá todo o histórico vinculado.`}
+      />
+
+      <ConfirmDialog
+        isOpen={isBulkDeleteConfirmOpen}
+        onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)}
+        onConfirm={handleBulkDelete}
+        title={`Excluir ${selectedIds.length} Ativos`}
+        description={`Tem certeza que deseja remover permanentemente os ${selectedIds.length} ativos selecionados? Esta ação não pode ser desfeita.`}
       />
     </div>
   );

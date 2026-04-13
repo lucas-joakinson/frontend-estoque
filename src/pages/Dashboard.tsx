@@ -109,13 +109,13 @@ export const Dashboard = () => {
             <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Distribuição por Status</h3>
           </div>
           
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full outline-none" style={{ minHeight: '300px' }}>
             {loadingAssets ? (
               <div className="h-full w-full flex items-center justify-center">
                 <Skeleton className="h-48 w-48 rounded-full" />
               </div>
             ) : statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <PieChart tabIndex={-1} style={{ outline: 'none' }}>
                   <Pie
                     data={statusData}
@@ -154,7 +154,7 @@ export const Dashboard = () => {
             <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Top 5 Categorias</h3>
           </div>
           
-          <div className="h-[300px] w-full">
+          <div className="h-[300px] w-full outline-none" style={{ minHeight: '300px' }}>
             {loadingAssets ? (
               <div className="h-full w-full flex flex-col gap-4 justify-end pb-4">
                 <Skeleton className="h-20 w-full rounded-lg" />
@@ -162,7 +162,7 @@ export const Dashboard = () => {
                 <Skeleton className="h-16 w-full rounded-lg" />
               </div>
             ) : categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
                 <BarChart data={categoryData} tabIndex={-1} style={{ outline: 'none' }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis 
