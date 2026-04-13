@@ -15,7 +15,7 @@ export type CreateAssetInput = z.infer<typeof createAssetSchema>;
 export const updateAssetSchema = z.object({
   status: z.enum(['DISPONIVEL', 'EM_USO', 'EM_MANUTENCAO', 'DEFEITO', 'DESCARTADO']),
   location: z.string().min(1, 'A localização é obrigatória'),
-  notes: z.string().optional(),
+  observation: z.string().optional(),
 });
 
 export type UpdateAssetInput = z.infer<typeof updateAssetSchema>;

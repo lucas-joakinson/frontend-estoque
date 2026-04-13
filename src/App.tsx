@@ -9,6 +9,7 @@ import { Categories } from './pages/Categories';
 import { Assets } from './pages/Assets';
 import { Users } from './pages/Users';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,32 +25,34 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            <Route element={<ProtectedRoute title="Dashboard" />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-            </Route>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              
+              <Route element={<ProtectedRoute title="Dashboard" />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+              </Route>
 
-            <Route element={<ProtectedRoute title="Gerenciar Produtos" />}>
-              <Route path="/products" element={<Products />} />
-            </Route>
+              <Route element={<ProtectedRoute title="Gerenciar Produtos" />}>
+                <Route path="/products" element={<Products />} />
+              </Route>
 
-            <Route element={<ProtectedRoute title="Categorias" />}>
-              <Route path="/categories" element={<Categories />} />
-            </Route>
+              <Route element={<ProtectedRoute title="Categorias" />}>
+                <Route path="/categories" element={<Categories />} />
+              </Route>
 
-            <Route element={<ProtectedRoute title="Gestão de Ativos (Patrimônio)" />}>
-              <Route path="/assets" element={<Assets />} />
-            </Route>
+              <Route element={<ProtectedRoute title="Gestão de Ativos (Patrimônio)" />}>
+                <Route path="/assets" element={<Assets />} />
+              </Route>
 
-            <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
-              <Route path="/users" element={<Users />} />
-            </Route>
+              <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
+                <Route path="/users" element={<Users />} />
+              </Route>
 
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
         
         <Toaster 
@@ -70,3 +73,4 @@ function App() {
 }
 
 export default App;
+

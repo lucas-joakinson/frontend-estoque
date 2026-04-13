@@ -3,6 +3,7 @@ import { Sidebar } from './layout/Sidebar';
 import { Header } from './layout/Header';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   title: string;
@@ -10,18 +11,17 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ title, requiredRole }: ProtectedRouteProps) => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const { isAuthenticated, isAdmin } = useAuth();
 
-  const isAuthorized = !requiredRole || role === requiredRole;
+  const isAuthorized = !requiredRole || (requiredRole === 'ADMIN' ? isAdmin : true);
 
   useEffect(() => {
-    if (token && !isAuthorized) {
+    if (isAuthenticated && !isAuthorized) {
       toast.error('Acesso restrito a administradores.');
     }
-  }, [token, isAuthorized]);
+  }, [isAuthenticated, isAuthorized]);
 
-  if (!token) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -41,3 +41,4 @@ export const ProtectedRoute = ({ title, requiredRole }: ProtectedRouteProps) => 
     </div>
   );
 };
+

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Package, Tag, ClipboardList, MapPin, History, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
@@ -22,7 +23,7 @@ export const Dashboard = () => {
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 100);
   const { assetsData, isLoading: loadingAssets } = useAssets(1, 100, '', undefined, undefined, 'updatedAt', 'desc');
 
-  const stats = [
+  const stats = useMemo(() => [
     {
       label: 'Modelos de Itens',
       value: productsData?.pagination.total || 0,
@@ -41,37 +42,35 @@ export const Dashboard = () => {
       icon: Tag,
       loading: loadingCategories,
     },
-  ];
+  ], [productsData, assetsData, categoriesData, loadingProducts, loadingAssets, loadingCategories]);
 
   const assets = assetsData?.assets || [];
   
-  const statusData = Object.entries(STATUS_LABELS).map(([key, { label, hex }]) => ({
-    name: label,
-    value: assets.filter(a => a.status === key).length,
-    color: hex
-  })).filter(d => d.value > 0);
+  const statusData = useMemo(() => 
+    Object.entries(STATUS_LABELS).map(([key, { label, hex }]) => ({
+      name: label,
+      value: assets.filter(a => a.status === key).length,
+      color: hex
+    })).filter(d => d.value > 0)
+  , [assets]);
 
-  const categoryCounts: Record<string, number> = {};
-  assets.forEach(asset => {
-    const catName = asset.product.category.name;
-    categoryCounts[catName] = (categoryCounts[catName] || 0) + 1;
-  });
+  const categoryData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    assets.forEach(asset => {
+      const catName = asset.product.category.name;
+      counts[catName] = (counts[catName] || 0) + 1;
+    });
 
-  const categoryData = Object.entries(categoryCounts)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [assets]);
 
-  const recentAssets = assets.slice(0, 5);
+  const recentAssets = useMemo(() => assets.slice(0, 5), [assets]);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-10">
-      <style>{`
-        .recharts-surface:focus { outline: none !important; }
-        .recharts-wrapper:focus { outline: none !important; }
-        svg:focus { outline: none !important; }
-      `}</style>
-
       <div>
         <h2 className="text-3xl font-bold text-text-primary leading-tight">
           Dashboard
@@ -102,21 +101,20 @@ export const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Gráfico de Status */}
         <div className="bg-surface border border-border-primary rounded-3xl p-8 space-y-6 shadow-sm">
           <div className="flex items-center gap-2">
             <PieChartIcon size={18} className="text-primary-400" />
             <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Distribuição por Status</h3>
           </div>
           
-          <div className="h-[300px] w-full outline-none" style={{ minHeight: '300px' }}>
+          <div className="h-[300px] w-full" style={{ minHeight: '300px', width: '100%' }}>
             {loadingAssets ? (
               <div className="h-full w-full flex items-center justify-center">
                 <Skeleton className="h-48 w-48 rounded-full" />
               </div>
             ) : statusData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <PieChart tabIndex={-1} style={{ outline: 'none' }}>
+              <ResponsiveContainer width="99%" height={300}>
+                <PieChart>
                   <Pie
                     data={statusData}
                     cx="50%"
@@ -126,10 +124,9 @@ export const Dashboard = () => {
                     paddingAngle={5}
                     dataKey="value"
                     isAnimationActive={true}
-                    style={{ outline: 'none' }}
                   >
                     {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
+                      <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip 
@@ -147,14 +144,13 @@ export const Dashboard = () => {
           </div>
         </div>
 
-        {/* Gráfico de Categorias */}
         <div className="bg-surface border border-border-primary rounded-3xl p-8 space-y-6 shadow-sm">
           <div className="flex items-center gap-2">
             <BarChart3 size={18} className="text-primary-400" />
             <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Top 5 Categorias</h3>
           </div>
           
-          <div className="h-[300px] w-full outline-none" style={{ minHeight: '300px' }}>
+          <div className="h-[300px] w-full" style={{ minHeight: '300px', width: '100%' }}>
             {loadingAssets ? (
               <div className="h-full w-full flex flex-col gap-4 justify-end pb-4">
                 <Skeleton className="h-20 w-full rounded-lg" />
@@ -162,8 +158,8 @@ export const Dashboard = () => {
                 <Skeleton className="h-16 w-full rounded-lg" />
               </div>
             ) : categoryData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minHeight={300}>
-                <BarChart data={categoryData} tabIndex={-1} style={{ outline: 'none' }}>
+              <ResponsiveContainer width="99%" height={300}>
+                <BarChart data={categoryData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis 
                     dataKey="name" 
@@ -295,3 +291,4 @@ export const Dashboard = () => {
     </div>
   );
 };
+

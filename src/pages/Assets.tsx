@@ -5,7 +5,7 @@ import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
-import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter, CheckSquare, X, ArrowRight, Settings2 } from 'lucide-react';
+import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter, X, Settings2 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
@@ -47,7 +47,7 @@ export const Assets = () => {
   const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
-  const [bulkData, setBulkData] = useState({ status: '' as AssetStatus | '', location: '', notes: 'Atualização em massa' });
+  const [bulkData, setBulkData] = useState({ status: '' as AssetStatus | '', location: '', observation: '' });
 
   const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(
     page, 
@@ -86,7 +86,7 @@ export const Assets = () => {
       resetEdit({
         status: selectedAsset.status,
         location: selectedAsset.location,
-        notes: '',
+        observation: selectedAsset.observation || '',
       });
     }
   }, [selectedAsset, resetEdit]);
@@ -127,7 +127,14 @@ export const Assets = () => {
 
   const onSubmitEdit = (data: UpdateAssetInput) => {
     if (!selectedAsset) return;
-    updateAsset({ id: selectedAsset.id, data }, {
+    
+    // Se a observação estiver vazia, usa a anterior
+    const payload = {
+      ...data,
+      observation: data.observation?.trim() || selectedAsset.observation || 'Atualização de registro'
+    };
+
+    updateAsset({ id: selectedAsset.id, data: payload }, {
       onSuccess: () => {
         setIsEditModalOpen(false);
         setSelectedAsset(null);
@@ -159,10 +166,15 @@ export const Assets = () => {
     try {
       let successCount = 0;
       for (const id of selectedIds) {
+        const asset = assetsData?.assets.find(a => a.id === id);
+        if (!asset) continue;
+
         const data: any = {};
         if (bulkData.status) data.status = bulkData.status;
         if (bulkData.location) data.location = bulkData.location;
-        if (bulkData.notes) data.notes = bulkData.notes;
+        
+        // Se não houver nova observação, tenta usar a do próprio ativo
+        data.observation = bulkData.observation?.trim() || asset.observation || 'Atualização em massa';
 
         if (Object.keys(data).length > 0) {
           await assetService.updateAsset(id, data);
@@ -174,7 +186,7 @@ export const Assets = () => {
       toast.success(`${successCount} ativos atualizados com sucesso!`, { id: toastId });
       setSelectedAssetIds([]);
       setIsBulkUpdateModalOpen(false);
-      setBulkData({ status: '', location: '', notes: 'Atualização em massa' });
+      setBulkData({ status: '', location: '', observation: '' });
     } catch (error) {
       toast.error('Ocorreu um erro durante a atualização em massa.', { id: toastId });
     } finally {
@@ -331,7 +343,7 @@ export const Assets = () => {
                   <input 
                     type="checkbox" 
                     className="w-4 h-4 rounded border-border-primary bg-background text-primary-500 focus:ring-primary-500/50"
-                    checked={assetsData?.assets && assetsData.assets.length > 0 && selectedIds.length === assetsData.assets.length}
+                    checked={!!(assetsData?.assets && assetsData.assets.length > 0 && selectedIds.length === assetsData.assets.length)}
                     onChange={toggleSelectAll}
                   />
                 </th>
@@ -554,11 +566,11 @@ export const Assets = () => {
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações para o Histórico</label>
             <textarea
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none ${editErrors.notes ? 'border-red-500' : 'border-border-primary'}`}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none ${editErrors.observation ? 'border-red-500' : 'border-border-primary'}`}
               placeholder="Descreva o motivo da mudança..."
-              {...registerEdit('notes')}
+              {...registerEdit('observation')}
             />
-            {editErrors.notes && <span className="text-[10px] text-red-500 font-mono">{editErrors.notes.message}</span>}
+            {editErrors.observation && <span className="text-[10px] text-red-500 font-mono">{editErrors.observation.message}</span>}
           </div>
           <button 
             type="submit" 
@@ -608,14 +620,14 @@ export const Assets = () => {
             <textarea
               className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none"
               placeholder="Descreva o motivo desta alteração em massa..."
-              value={bulkData.notes || ''}
-              onChange={(e) => setBulkData({ ...bulkData, notes: e.target.value })}
+              value={bulkData.observation || ''}
+              onChange={(e) => setBulkData({ ...bulkData, observation: e.target.value })}
             />
           </div>
 
           <button 
             onClick={handleBulkUpdate}
-            disabled={isProcessingBulk || (!bulkData.status && !bulkData.location)}
+            disabled={isProcessingBulk || (!bulkData.status && !bulkData.location && !bulkData.observation)}
             className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isProcessingBulk ? <Spinner /> : `Atualizar ${selectedIds.length} Itens`}

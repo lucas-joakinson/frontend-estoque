@@ -51,3 +51,11 @@
 ::-webkit-scrollbar-track { background: var(--background); }
 ::-webkit-scrollbar-thumb { background: #2e1065; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #4c1d95; }
+
+/* Recharts global styles */
+.recharts-surface:focus,
+.recharts-wrapper:focus,
+svg:focus {
+  outline: none !important;
+}
+

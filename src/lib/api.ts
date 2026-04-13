@@ -2,7 +2,7 @@ import axios from 'axios';
 import { toast } from 'sonner';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
 });
 
 api.interceptors.request.use((config) => {
@@ -17,7 +17,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (!error.response) {
-      toast.error('Erro de conexão: O servidor parece estar offline ou inacessível.');
+      toast.error('Erro de conexão: Servidor offline.');
       return Promise.reject(error);
     }
 
@@ -26,16 +26,19 @@ api.interceptors.response.use(
     if (status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
-      window.location.href = '/login';
-      toast.error('Sessão expirada. Por favor, faça login novamente.');
+      toast.error('Sessão expirada. Faça login novamente.');
+    
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
     }
 
     if (status === 403) {
-      toast.error('Acesso negado: Você não tem permissão para realizar esta ação.');
+      toast.error('Acesso negado.');
     }
 
-    if (status === 500) {
-      toast.error('Erro interno do servidor. Nossa equipe técnica já foi notificada.');
+    if (status >= 500) {
+      toast.error('Erro interno no servidor.');
     }
 
     return Promise.reject(error);
@@ -43,3 +46,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+

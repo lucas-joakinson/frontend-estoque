@@ -29,7 +29,7 @@ export interface Asset {
   product: Product;
   status: AssetStatus;
   location: string;
-  notes?: string;
+  observation?: string;
   createdAt: string;
   updatedAt: string;
 }

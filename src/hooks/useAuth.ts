@@ -2,16 +2,17 @@ import { useMutation } from '@tanstack/react-query';
 import { authService } from '../services/auth.service';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useAuthContext } from '../contexts/AuthContext';
 import type { LoginInput } from '../schemas/auth.schema';
 
 export const useAuth = () => {
   const navigate = useNavigate();
+  const { login: contextLogin, logout: contextLogout, isAdmin, isAuthenticated } = useAuthContext();
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
     onSuccess: (data) => {
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('role', data.role);
+      contextLogin(data.token, data.role);
       toast.success('Bem-vindo ao sistema!');
       navigate('/dashboard');
     },
@@ -31,21 +32,14 @@ export const useAuth = () => {
     },
   });
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login');
-    toast.info('Sessão encerrada.');
-  };
-
-  const isAdmin = localStorage.getItem('role') === 'ADMIN';
-
   return {
     login: loginMutation.mutate,
     isLoggingIn: loginMutation.isPending,
     register: registerMutation.mutate,
     isRegistering: registerMutation.isPending,
-    logout,
+    logout: contextLogout,
     isAdmin,
+    isAuthenticated,
   };
 };
+
