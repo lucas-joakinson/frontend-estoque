@@ -20,8 +20,6 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string; hex: st
 export const Dashboard = () => {
   const { productsData, isLoading: loadingProducts } = useProducts(1, 1);
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 100);
-  
-  // Ordem correta: page, limit, search, status, categoryId, sortBy, order
   const { assetsData, isLoading: loadingAssets } = useAssets(1, 100, '', undefined, undefined, 'updatedAt', 'desc');
 
   const stats = [
@@ -45,7 +43,6 @@ export const Dashboard = () => {
     },
   ];
 
-  // Processamento de dados para os gráficos
   const assets = assetsData?.assets || [];
   
   const statusData = Object.entries(STATUS_LABELS).map(([key, { label, hex }]) => ({
@@ -63,12 +60,18 @@ export const Dashboard = () => {
   const categoryData = Object.entries(categoryCounts)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 5); // Top 5 categorias
+    .slice(0, 5);
 
   const recentAssets = assets.slice(0, 5);
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500 pb-10">
+      <style>{`
+        .recharts-surface:focus { outline: none !important; }
+        .recharts-wrapper:focus { outline: none !important; }
+        svg:focus { outline: none !important; }
+      `}</style>
+
       <div>
         <h2 className="text-3xl font-bold text-text-primary leading-tight">
           Dashboard
@@ -78,7 +81,6 @@ export const Dashboard = () => {
         </p>
       </div>
 
-      {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {stats.map((stat, i) => (
           <div key={i} className="p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group">
@@ -99,7 +101,6 @@ export const Dashboard = () => {
         ))}
       </div>
 
-      {/* Seção de Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Gráfico de Status */}
         <div className="bg-surface border border-border-primary rounded-3xl p-8 space-y-6 shadow-sm">
@@ -115,7 +116,7 @@ export const Dashboard = () => {
               </div>
             ) : statusData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart tabIndex={-1} style={{ outline: 'none' }}>
                   <Pie
                     data={statusData}
                     cx="50%"
@@ -124,9 +125,11 @@ export const Dashboard = () => {
                     outerRadius={80}
                     paddingAngle={5}
                     dataKey="value"
+                    isAnimationActive={true}
+                    style={{ outline: 'none' }}
                   >
                     {statusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} style={{ outline: 'none' }} />
                     ))}
                   </Pie>
                   <Tooltip 
@@ -160,7 +163,7 @@ export const Dashboard = () => {
               </div>
             ) : categoryData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryData}>
+                <BarChart data={categoryData} tabIndex={-1} style={{ outline: 'none' }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis 
                     dataKey="name" 
@@ -178,11 +181,35 @@ export const Dashboard = () => {
                     fontFamily="monospace"
                   />
                   <Tooltip 
-                    cursor={{ fill: '#27272a' }}
-                    contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '12px' }}
-                    itemStyle={{ color: '#8b5cf6', fontSize: '12px', fontFamily: 'monospace' }}
+                    cursor={{ fill: '#ffffff', opacity: 0.05 }}
+                    contentStyle={{ 
+                      backgroundColor: '#18181b', 
+                      border: '1px solid #27272a', 
+                      borderRadius: '12px',
+                      padding: '8px 12px'
+                    }}
+                    itemStyle={{ 
+                      color: '#c4b5fd', 
+                      fontSize: '12px', 
+                      fontFamily: 'monospace',
+                      textTransform: 'uppercase'
+                    }}
+                    labelStyle={{ 
+                      color: '#ffffff', 
+                      fontSize: '12px', 
+                      fontFamily: 'monospace', 
+                      fontWeight: 'bold',
+                      marginBottom: '4px',
+                      textTransform: 'uppercase'
+                    }}
                   />
-                  <Bar dataKey="count" fill="#8b5cf6" radius={[6, 6, 0, 0]} barSize={40} />
+                  <Bar 
+                    dataKey="count" 
+                    fill="#8b5cf6" 
+                    radius={[6, 6, 0, 0]} 
+                    barSize={40}
+                    activeBar={{ fill: '#a78bfa' }}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -194,7 +221,6 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Lista Recente */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 px-1">
           <History size={18} className="text-primary-400" />
