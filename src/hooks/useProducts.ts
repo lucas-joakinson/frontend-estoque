@@ -7,7 +7,23 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
 
   const productsQuery = useQuery({
     queryKey: ['products', page, limit, search, sortBy, order],
-    queryFn: () => productService.listProducts(page, limit, search, sortBy, order),
+    queryFn: async () => {
+      const data = await productService.listProducts(page, limit, search, sortBy, order);
+      
+      if (Array.isArray(data)) {
+        return {
+          products: data,
+          pagination: {
+            page: 1,
+            limit: data.length,
+            total: data.length,
+            totalPages: 1
+          }
+        } as any;
+      }
+      
+      return data;
+    },
     placeholderData: (previousData) => previousData,
   });
 

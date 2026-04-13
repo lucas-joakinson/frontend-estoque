@@ -1,0 +1,22 @@
+import { z } from 'zod';
+
+export const createUserSchema = z.object({
+  matricula: z.string().min(6, 'A matrícula deve ter no mínimo 6 caracteres'),
+  password: z.string().min(6, 'A senha deve ter no mínimo 6 caracteres'),
+  role: z.enum(['ADMIN', 'OPERATOR'], {
+    invalid_type_error: 'Selecione uma permissão válida',
+    required_error: 'A permissão é obrigatória',
+  }),
+});
+
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
+export const updateUserSchema = z.object({
+  password: z.string().min(6, 'A nova senha deve ter no mínimo 6 caracteres').optional().or(z.literal('')),
+  role: z.enum(['ADMIN', 'OPERATOR'], {
+    invalid_type_error: 'Selecione uma permissão válida',
+    required_error: 'A permissão é obrigatória',
+  }),
+});
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;

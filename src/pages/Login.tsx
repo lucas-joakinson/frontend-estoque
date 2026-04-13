@@ -1,22 +1,29 @@
-import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/ui/Spinner';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { loginSchema, type LoginInput } from '../schemas/auth.schema';
 
 export const Login = () => {
-  const [matricula, setMatricula] = useState('');
-  const [password, setPassword] = useState('');
   const { login, isLoggingIn } = useAuth();
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+  });
 
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    login({ matricula, password });
+  const onSubmit = (data: LoginInput) => {
+    login(data);
   };
 
   return (
@@ -31,29 +38,27 @@ export const Login = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-surface border border-border-primary rounded-2xl p-8 space-y-6 shadow-xl">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-surface border border-border-primary rounded-2xl p-8 space-y-6 shadow-xl">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2 px-1">Matrícula</label>
             <input
               type="text"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${errors.matricula ? 'border-red-500' : 'border-border-primary'}`}
               placeholder="Digite sua matrícula"
-              value={matricula}
-              onChange={(e) => setMatricula(e.target.value)}
+              {...register('matricula')}
             />
+            {errors.matricula && <span className="text-[10px] text-red-500 font-mono">{errors.matricula.message}</span>}
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2 px-1">Senha</label>
             <input
               type="password"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${errors.password ? 'border-red-500' : 'border-border-primary'}`}
               placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              {...register('password')}
             />
+            {errors.password && <span className="text-[10px] text-red-500 font-mono">{errors.password.message}</span>}
           </div>
 
           <button

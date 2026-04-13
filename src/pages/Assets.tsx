@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
-import { Search, Plus, Edit2, History, Trash2, MapPin, ClipboardList, User, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { useDebounce } from '../hooks/useDebounce';
+import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from 'sonner';
-import type { Asset, AssetStatus } from '../types';
+import type { Asset, AssetStatus, Product } from '../types';
 import { assetService } from '../services/asset.service';
+import { createAssetSchema, updateAssetSchema, type CreateAssetInput, type UpdateAssetInput } from '../schemas/asset.schema';
 
 const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
   DISPONIVEL: { label: 'Disponível', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -20,25 +24,53 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 
 export const Assets = () => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [isExporting, setIsExporting] = useState(false);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createData, setCreateData] = useState({ patrimonio: '', productId: '', status: 'DISPONIVEL' as AssetStatus, location: '' });
-  
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [editData, setEditData] = useState({ status: 'DISPONIVEL' as AssetStatus, location: '', notes: '' });
 
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [assetForHistory, setAssetForHistory] = useState<Asset | null>(null);
 
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
 
-  const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(page, limit, search);
+  const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(page, 10, debouncedSearch);
   const { productsData } = useProducts(1, 100);
   const { data: history, isLoading: isLoadingHistory } = useAssetHistory(assetForHistory?.id || null);
+
+  const {
+    register: registerCreate,
+    handleSubmit: handleSubmitCreate,
+    reset: resetCreate,
+    formState: { errors: createErrors },
+  } = useForm<CreateAssetInput>({
+    resolver: zodResolver(createAssetSchema),
+    defaultValues: {
+      status: 'DISPONIVEL',
+    },
+  });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+  } = useForm<UpdateAssetInput>({
+    resolver: zodResolver(updateAssetSchema),
+  });
+
+  useEffect(() => {
+    if (selectedAsset) {
+      resetEdit({
+        status: selectedAsset.status,
+        location: selectedAsset.location,
+        notes: '',
+      });
+    }
+  }, [selectedAsset, resetEdit]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -57,20 +89,18 @@ export const Assets = () => {
     }
   };
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    createAsset(createData, {
+  const onSubmitCreate = (data: CreateAssetInput) => {
+    createAsset(data, {
       onSuccess: () => {
         setIsCreateModalOpen(false);
-        setCreateData({ patrimonio: '', productId: '', status: 'DISPONIVEL', location: '' });
+        resetCreate();
       }
     });
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmitEdit = (data: UpdateAssetInput) => {
     if (!selectedAsset) return;
-    updateAsset({ id: selectedAsset.id, data: editData }, {
+    updateAsset({ id: selectedAsset.id, data }, {
       onSuccess: () => {
         setIsEditModalOpen(false);
         setSelectedAsset(null);
@@ -104,10 +134,13 @@ export const Assets = () => {
               className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
               title="Exportar para Excel"
             >
-              {isExporting ? <Spinner size="sm" /> : <Download size={18} />} Exportar
+              {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
             </button>
             <button 
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                resetCreate();
+                setIsCreateModalOpen(true);
+              }}
               className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
             >
               <Plus size={18} /> Novo Ativo
@@ -180,7 +213,6 @@ export const Assets = () => {
                         <button 
                           onClick={() => {
                             setSelectedAsset(asset);
-                            setEditData({ status: asset.status, location: asset.location, notes: '' });
                             setIsEditModalOpen(true);
                           }}
                           className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
@@ -240,56 +272,52 @@ export const Assets = () => {
 
       {/* Modal de Cadastro */}
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Novo Ativo (Patrimônio)">
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Número do Patrimônio</label>
             <input
               type="text"
-              required
-              maxLength={6}
               placeholder="Ex: 123456"
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              value={createData.patrimonio}
-              onChange={(e) => setCreateData({ ...createData, patrimonio: e.target.value.replace(/\D/g, '') })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.patrimonio ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('patrimonio')}
             />
+            {createErrors.patrimonio && <span className="text-[10px] text-red-500 font-mono">{createErrors.patrimonio.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Modelo do Item</label>
             <select
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              value={createData.productId}
-              onChange={(e) => setCreateData({ ...createData, productId: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.productId ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('productId')}
             >
               <option value="">Selecione um modelo...</option>
-              {productsData?.products.map((p) => (
+              {productsData?.products.map((p: Product) => (
                 <option key={p.id} value={p.id}>{p.name} {p.brand ? `(${p.brand})` : ''}</option>
               ))}
             </select>
+            {createErrors.productId && <span className="text-[10px] text-red-500 font-mono">{createErrors.productId.message}</span>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status Inicial</label>
               <select
-                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                value={createData.status}
-                onChange={(e) => setCreateData({ ...createData, status: e.target.value as AssetStatus })}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.status ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerCreate('status')}
               >
                 {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
                   <option key={val} value={val}>{label}</option>
                 ))}
               </select>
+              {createErrors.status && <span className="text-[10px] text-red-500 font-mono">{createErrors.status.message}</span>}
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Localização</label>
               <input
                 type="text"
-                required
                 placeholder="Ex: Sala 204"
-                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                value={createData.location}
-                onChange={(e) => setCreateData({ ...createData, location: e.target.value })}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.location ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerCreate('location')}
               />
+              {createErrors.location && <span className="text-[10px] text-red-500 font-mono">{createErrors.location.message}</span>}
             </div>
           </div>
           <button 
@@ -304,7 +332,7 @@ export const Assets = () => {
 
       {/* Modal de Edição */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Atualizar Ativo: ${selectedAsset?.patrimonio}`}>
-        <form onSubmit={handleUpdate} className="space-y-4">
+        <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="p-4 rounded-xl bg-hover-bg border border-border-primary mb-4">
             <p className="text-xs font-mono text-text-secondary uppercase tracking-widest mb-1">Item selecionado</p>
             <p className="text-sm font-bold text-text-primary">{selectedAsset?.product.name}</p>
@@ -314,34 +342,33 @@ export const Assets = () => {
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Novo Status</label>
               <select
-                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                value={editData.status}
-                onChange={(e) => setEditData({ ...editData, status: e.target.value as AssetStatus })}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.status ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerEdit('status')}
               >
                 {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
                   <option key={val} value={val}>{label}</option>
                 ))}
               </select>
+              {editErrors.status && <span className="text-[10px] text-red-500 font-mono">{editErrors.status.message}</span>}
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nova Localização</label>
               <input
                 type="text"
-                required
-                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                value={editData.location}
-                onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.location ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerEdit('location')}
               />
+              {editErrors.location && <span className="text-[10px] text-red-500 font-mono">{editErrors.location.message}</span>}
             </div>
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações para o Histórico</label>
             <textarea
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none ${editErrors.notes ? 'border-red-500' : 'border-border-primary'}`}
               placeholder="Descreva o motivo da mudança..."
-              value={editData.notes}
-              onChange={(e) => setEditData({ ...editData, notes: e.target.value })}
+              {...registerEdit('notes')}
             />
+            {editErrors.notes && <span className="text-[10px] text-red-500 font-mono">{editErrors.notes.message}</span>}
           </div>
           <button 
             type="submit" 

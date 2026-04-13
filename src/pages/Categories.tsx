@@ -1,23 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useCategories } from '../hooks/useCategories';
 import { useAuth } from '../hooks/useAuth';
+import { useDebounce } from '../hooks/useDebounce';
 import { Plus, Edit2, Trash2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Skeleton } from '../components/ui/Skeleton';
+import { categorySchema, type CategoryInput } from '../schemas/category.schema';
 
 export const Categories = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 500);
 
-  const { categoriesData, isLoading, createCategory, updateCategory, deleteCategory } = useCategories(page, limit, searchTerm);
+  const { categoriesData, isLoading, createCategory, updateCategory, deleteCategory } = useCategories(page, limit, debouncedSearch);
   const { isAdmin } = useAuth();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
-  const [categoryName, setCategoryName] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CategoryInput>({
+    resolver: zodResolver(categorySchema),
+  });
+
+  useEffect(() => {
+    if (selectedCategory) {
+      reset({ name: selectedCategory.name });
+    } else {
+      reset({ name: '' });
+    }
+  }, [selectedCategory, reset]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -27,23 +48,26 @@ export const Categories = () => {
   const handleOpenModal = (category?: { id: string; name: string }) => {
     if (category) {
       setSelectedCategory(category);
-      setCategoryName(category.name);
     } else {
       setSelectedCategory(null);
-      setCategoryName('');
     }
     setIsModalOpen(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (data: CategoryInput) => {
     if (selectedCategory) {
-      updateCategory({ id: selectedCategory.id, name: categoryName }, {
-        onSuccess: () => setIsModalOpen(false)
+      updateCategory({ id: selectedCategory.id, name: data.name }, {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          reset();
+        }
       });
     } else {
-      createCategory(categoryName, {
-        onSuccess: () => setIsModalOpen(false)
+      createCategory(data.name, {
+        onSuccess: () => {
+          setIsModalOpen(false);
+          reset();
+        }
       });
     }
   };
@@ -175,21 +199,20 @@ export const Categories = () => {
         onClose={() => setIsModalOpen(false)}
         title={selectedCategory ? 'Editar Categoria' : 'Nova Categoria'}
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Nome</label>
             <input
               type="text"
-              required
               autoFocus
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${errors.name ? 'border-red-500' : 'border-border-primary'}`}
               placeholder="Ex: Eletrônicos"
-              value={categoryName}
-              onChange={(e) => setCategoryName(e.target.value)}
+              {...register('name')}
             />
+            {errors.name && <span className="text-[10px] text-red-500 font-mono">{errors.name.message}</span>}
           </div>
           <div className="pt-2">
-            <button type="submit" className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple">
+            <button type="submit" className="w-full py-3 h-12 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple">
               Salvar Categoria
             </button>
           </div>

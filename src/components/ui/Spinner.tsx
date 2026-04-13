@@ -1,5 +1,10 @@
 import { Loader2 } from 'lucide-react';
 
-export const Spinner = ({ className }: { className?: string }) => {
-  return <Loader2 className={`animate-spin text-primary ${className}`} />;
+interface SpinnerProps {
+  className?: string;
+  size?: number | string;
+}
+
+export const Spinner = ({ className, size = 20 }: SpinnerProps) => {
+  return <Loader2 size={size} className={`animate-spin text-primary ${className}`} />;
 };

@@ -1,44 +1,48 @@
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-import { Search, Trash2, PackagePlus, ChevronLeft, ChevronRight, SlidersHorizontal, Package } from 'lucide-react';
+import { useDebounce } from '../hooks/useDebounce';
+import { Search, Trash2, PackagePlus, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
-import { toast } from 'sonner';
 import type { Product } from '../types';
+import { createProductSchema, type CreateProductInput } from '../schemas/product.schema';
 
 export const Products = () => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [order, setOrder] = useState('desc');
+  const debouncedSearch = useDebounce(search, 500);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', categoryId: '', brand: '' });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const { productsData, isLoading, deleteProduct, createProduct, isCreating } = useProducts(page, limit, search, sortBy, order);
+  const { productsData, isLoading, deleteProduct, createProduct, isCreating } = useProducts(page, 10, debouncedSearch, 'createdAt', 'desc');
   const { categoriesData } = useCategories(1, 100);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateProductInput>({
+    resolver: zodResolver(createProductSchema),
+  });
 
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
   };
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.categoryId) {
-      toast.error('Selecione uma categoria');
-      return;
-    }
-    createProduct(formData, {
+  const onSubmit = (data: CreateProductInput) => {
+    createProduct(data, {
       onSuccess: () => {
         setIsModalOpen(false);
-        setFormData({ name: '', categoryId: '', brand: '' });
+        reset();
       }
     });
   };
@@ -67,7 +71,10 @@ export const Products = () => {
             />
           </div>
           <button 
-            onClick={() => setIsModalOpen(true)} 
+            onClick={() => {
+              reset();
+              setIsModalOpen(true);
+            }} 
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple hover:shadow-glow-purple transition-all w-full md:w-auto justify-center"
           >
             <PackagePlus size={18} /> Novo Modelo
@@ -97,7 +104,7 @@ export const Products = () => {
                   </tr>
                 ))
               ) : productsData?.products && productsData.products.length > 0 ? (
-                productsData.products.map((product) => (
+                productsData.products.map((product: Product) => (
                   <tr key={product.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0">
                     <td className="px-6 py-4 text-sm font-bold text-text-primary flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-primary-500/10 flex items-center justify-center text-primary-400">
@@ -163,44 +170,42 @@ export const Products = () => {
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Novo Modelo de Item">
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome do Item</label>
             <input
               type="text"
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.name ? 'border-red-500' : 'border-border-primary'}`}
+              {...register('name')}
             />
+            {errors.name && <span className="text-[10px] text-red-500 font-mono">{errors.name.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Marca (Opcional)</label>
             <input
               type="text"
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              value={formData.brand}
-              onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.brand ? 'border-red-500' : 'border-border-primary'}`}
+              {...register('brand')}
             />
+            {errors.brand && <span className="text-[10px] text-red-500 font-mono">{errors.brand.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Categoria</label>
             <select
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-              value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.categoryId ? 'border-red-500' : 'border-border-primary'}`}
+              {...register('categoryId')}
             >
               <option value="">Selecione...</option>
               {categoriesData?.categories?.map((cat) => (
                 <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
+            {errors.categoryId && <span className="text-[10px] text-red-500 font-mono">{errors.categoryId.message}</span>}
           </div>
           <button 
             type="submit" 
             disabled={isCreating}
-            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
           >
             {isCreating ? <Spinner /> : 'Cadastrar Modelo'}
           </button>

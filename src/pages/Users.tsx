@@ -1,37 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useUsers } from '../hooks/useUsers';
+import { useDebounce } from '../hooks/useDebounce';
 import { Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, Edit2 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
-import { toast } from 'sonner';
 import type { User } from '../types';
+import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '../schemas/user.schema';
 
 export const Users = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 500);
   const [sortBy, setSortBy] = useState('createdAt');
   const [order, setOrder] = useState('desc');
   
   const [isNewUserModalOpen, setIsNewUserModalOpen] = useState(false);
-  const [newUserFormData, setNewUserFormData] = useState<{
-    matricula: string;
-    password: string;
-    role: 'ADMIN' | 'OPERATOR';
-  }>({ matricula: '', password: '', role: 'OPERATOR' });
-  
   const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
-  const [editUserFormData, setEditUserFormData] = useState<{
-    password: string;
-    role: 'ADMIN' | 'OPERATOR';
-  }>({ password: '', role: 'OPERATOR' });
-
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  const { usersData, isLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(page, limit, search, sortBy, order);
+  const { usersData, isLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(page, limit, debouncedSearch, sortBy, order);
+
+  const {
+    register: registerCreate,
+    handleSubmit: handleSubmitCreate,
+    reset: resetCreate,
+    formState: { errors: createErrors },
+  } = useForm<CreateUserInput>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      role: 'OPERATOR',
+    },
+  });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+  } = useForm<UpdateUserInput>({
+    resolver: zodResolver(updateUserSchema),
+  });
+
+  useEffect(() => {
+    if (selectedUser) {
+      resetEdit({
+        role: selectedUser.role,
+        password: '',
+      });
+    }
+  }, [selectedUser, resetEdit]);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -43,44 +66,30 @@ export const Users = () => {
     setPage(1);
   };
 
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newUserFormData.matricula.length < 6 || newUserFormData.password.length < 6) {
-      toast.error('A matrícula e a senha devem possuir pelo menos 6 caracteres.');
-      return;
-    }
-
-    createUser(newUserFormData, {
+  const onSubmitCreate = (data: CreateUserInput) => {
+    createUser(data, {
       onSuccess: () => {
         setIsNewUserModalOpen(false);
-        setNewUserFormData({ matricula: '', password: '', role: 'OPERATOR' });
+        resetCreate();
       }
     });
   };
 
-  const handleEditUser = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmitEdit = (data: UpdateUserInput) => {
     if (!selectedUser) return;
 
-    if (editUserFormData.password && editUserFormData.password.length < 6) {
-      toast.error('A nova senha deve possuir pelo menos 6 caracteres.');
-      return;
-    }
-
-    const data: { password?: string; role?: 'ADMIN' | 'OPERATOR' } = {
-      role: editUserFormData.role
+    const payload: { password?: string; role?: 'ADMIN' | 'OPERATOR' } = {
+      role: data.role
     };
 
-    if (editUserFormData.password) {
-      data.password = editUserFormData.password;
+    if (data.password) {
+      payload.password = data.password;
     }
 
-    updateUser({ id: selectedUser.id, data }, {
+    updateUser({ id: selectedUser.id, data: payload }, {
       onSuccess: () => {
         setIsEditUserModalOpen(false);
-        setEditUserFormData({ password: '', role: 'OPERATOR' });
+        resetEdit();
         setSelectedUser(null);
       }
     });
@@ -110,7 +119,10 @@ export const Users = () => {
             />
           </div>
           <button 
-            onClick={() => setIsNewUserModalOpen(true)} 
+            onClick={() => {
+              resetCreate();
+              setIsNewUserModalOpen(true);
+            }} 
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple hover:shadow-glow-purple transition-all w-full md:w-auto justify-center"
           >
             <UserPlus size={18} /> Novo Usuário
@@ -187,7 +199,7 @@ export const Users = () => {
                   </tr>
                 ))
               ) : usersData?.users && usersData.users.length > 0 ? (
-                usersData.users.map((user) => (
+                usersData.users.map((user: User) => (
                   <tr key={user.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
                     <td className="px-6 py-4 text-sm text-text-primary font-bold font-mono tracking-tight">{user.matricula}</td>
                     <td className="px-6 py-4">
@@ -209,7 +221,6 @@ export const Users = () => {
                             <button
                               onClick={() => {
                                 setSelectedUser(user);
-                                setEditUserFormData({ password: '', role: user.role });
                                 setIsEditUserModalOpen(true);
                               }}
                               className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 hover:border-primary-500/30 transition-all"
@@ -275,20 +286,18 @@ export const Users = () => {
         onClose={() => setIsNewUserModalOpen(false)}
         title="Novo Usuário"
       >
-        <form onSubmit={handleCreateUser} className="space-y-4">
+        <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
               Matrícula <span className="text-primary-400 lowercase">(min. 6 chars)</span>
             </label>
             <input
               type="text"
-              required
-              minLength={6}
               placeholder="Digite a matrícula"
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
-              value={newUserFormData.matricula}
-              onChange={(e) => setNewUserFormData({ ...newUserFormData, matricula: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${createErrors.matricula ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('matricula')}
             />
+            {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono">{createErrors.matricula.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
@@ -296,25 +305,22 @@ export const Users = () => {
             </label>
             <input
               type="password"
-              required
-              minLength={6}
               placeholder="••••••••"
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
-              value={newUserFormData.password}
-              onChange={(e) => setNewUserFormData({ ...newUserFormData, password: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${createErrors.password ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('password')}
             />
+            {createErrors.password && <span className="text-[10px] text-red-500 font-mono">{createErrors.password.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
             <select
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer"
-              value={newUserFormData.role}
-              onChange={(e) => setNewUserFormData({ ...newUserFormData, role: e.target.value as 'ADMIN' | 'OPERATOR' })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer ${createErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('role')}
             >
               <option value="OPERATOR">OPERADOR (Padrão)</option>
               <option value="ADMIN">ADMINISTRADOR</option>
             </select>
+            {createErrors.role && <span className="text-[10px] text-red-500 font-mono">{createErrors.role.message}</span>}
           </div>
           <div className="pt-4">
             <button 
@@ -322,7 +328,7 @@ export const Users = () => {
               disabled={isCreating}
               className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
             >
-              {isCreating ? <Spinner className="text-white" /> : 'Criar Usuário'}
+              {isCreating ? <Spinner size={18} /> : 'Criar Usuário'}
             </button>
           </div>
         </form>
@@ -337,31 +343,29 @@ export const Users = () => {
         }}
         title={`Editar Usuário: ${selectedUser?.matricula}`}
       >
-        <form onSubmit={handleEditUser} className="space-y-4">
+        <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
               Nova Senha <span className="text-primary-400 lowercase">(opcional - min. 6 chars)</span>
             </label>
             <input
               type="password"
-              minLength={6}
               placeholder="Deixe em branco para manter"
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
-              value={editUserFormData.password}
-              onChange={(e) => setEditUserFormData({ ...editUserFormData, password: e.target.value })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${editErrors.password ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerEdit('password')}
             />
+            {editErrors.password && <span className="text-[10px] text-red-500 font-mono">{editErrors.password.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
             <select
-              required
-              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer"
-              value={editUserFormData.role}
-              onChange={(e) => setEditUserFormData({ ...editUserFormData, role: e.target.value as 'ADMIN' | 'OPERATOR' })}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer ${editErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerEdit('role')}
             >
               <option value="OPERATOR">OPERADOR</option>
               <option value="ADMIN">ADMINISTRADOR</option>
             </select>
+            {editErrors.role && <span className="text-[10px] text-red-500 font-mono">{editErrors.role.message}</span>}
           </div>
           <div className="pt-4">
             <button 
@@ -369,7 +373,7 @@ export const Users = () => {
               disabled={isUpdating}
               className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
             >
-              {isUpdating ? <Spinner className="text-white" /> : 'Salvar Alterações'}
+              {isUpdating ? <Spinner size={18} /> : 'Salvar Alterações'}
             </button>
           </div>
         </form>

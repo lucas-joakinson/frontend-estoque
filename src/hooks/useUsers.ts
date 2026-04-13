@@ -7,7 +7,23 @@ export const useUsers = (page = 1, limit = 10, search = '', sortBy = 'createdAt'
 
   const usersQuery = useQuery({
     queryKey: ['users', page, limit, search, sortBy, order],
-    queryFn: () => userService.listUsers(page, limit, search, sortBy, order),
+    queryFn: async () => {
+      const data = await userService.listUsers(page, limit, search, sortBy, order);
+      
+      if (Array.isArray(data)) {
+        return {
+          users: data,
+          pagination: {
+            page: 1,
+            limit: data.length,
+            total: data.length,
+            totalPages: 1
+          }
+        } as any;
+      }
+      
+      return data;
+    },
     placeholderData: (previousData) => previousData,
   });
 
