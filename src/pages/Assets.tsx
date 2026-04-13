@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
-import { Search, Plus, Edit2, History, Trash2, MapPin, ClipboardList, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Edit2, History, Trash2, MapPin, ClipboardList, User, Calendar, ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { toast } from 'sonner';
 import type { Asset, AssetStatus } from '../types';
+import { assetService } from '../services/asset.service';
 
 const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
   DISPONIVEL: { label: 'Disponível', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -19,8 +20,9 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 
 export const Assets = () => {
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createData, setCreateData] = useState({ patrimonio: '', productId: '', status: 'DISPONIVEL' as AssetStatus, location: '' });
@@ -41,6 +43,18 @@ export const Assets = () => {
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await assetService.exportAssets();
+      toast.success('Relatório gerado com sucesso!');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao exportar dados');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -83,12 +97,22 @@ export const Assets = () => {
               onChange={(e) => handleSearch(e.target.value)}
             />
           </div>
-          <button 
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center"
-          >
-            <Plus size={18} /> Novo Ativo
-          </button>
+          <div className="flex gap-2 w-full md:w-auto">
+            <button 
+              onClick={handleExport}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+              title="Exportar para Excel"
+            >
+              {isExporting ? <Spinner size="sm" /> : <Download size={18} />} Exportar
+            </button>
+            <button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+            >
+              <Plus size={18} /> Novo Ativo
+            </button>
+          </div>
         </div>
       </div>
 

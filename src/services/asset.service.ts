@@ -51,5 +51,67 @@ export const assetService = {
 
   async deleteAsset(id: string): Promise<void> {
     await api.delete(`/assets/${id}`);
+  },
+
+  async exportAssets(): Promise<void> {
+    let allAssets: any[] = [];
+    let currentPage = 1;
+    let totalPages = 1;
+    const LIMIT = 100; // Limite máximo do backend
+
+    try {
+      // Loop para buscar todas as páginas disponíveis
+      do {
+        const { data } = await api.get('/assets', { 
+          params: { page: currentPage, limit: LIMIT } 
+        });
+
+        const pageAssets = Array.isArray(data) ? data : data.assets;
+        const pagination = Array.isArray(data) ? null : data.pagination;
+
+        allAssets = [...allAssets, ...pageAssets];
+        
+        if (pagination) {
+          totalPages = pagination.totalPages;
+          currentPage++;
+        } else {
+          break; // Se não houver paginação no retorno, para no primeiro fetch
+        }
+      } while (currentPage <= totalPages);
+
+      if (allAssets.length === 0) {
+        throw new Error('Nenhum dado encontrado para exportar.');
+      }
+
+      // Cabeçalhos das colunas
+      const headers = ['Patrimonio', 'Item', 'Marca', 'Categoria', 'Status', 'Localizacao', 'Data Cadastro'];
+      
+      // Mapeamento dos dados
+      const csvRows = allAssets.map((asset: any) => [
+        asset.patrimonio,
+        asset.product?.name || '',
+        asset.product?.brand || '',
+        asset.product?.category?.name || '',
+        asset.status,
+        asset.location,
+        new Date(asset.createdAt).toLocaleDateString()
+      ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','));
+
+      const csvContent = [headers.join(','), ...csvRows].join('\n');
+      
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `relatorio_ativos_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Erro na exportação:', error);
+      throw new Error('Falha ao gerar relatório. Verifique a conexão com o servidor.');
+    }
   }
 };
