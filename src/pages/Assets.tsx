@@ -5,7 +5,7 @@ import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useDebounce } from '../hooks/useDebounce';
-import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter, X, Settings2 } from 'lucide-react';
+import { Search, Plus, Edit2, History, Trash2, MapPin, User, Calendar, ChevronLeft, ChevronRight, Download, Filter, X, Settings2, SlidersHorizontal } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
@@ -98,6 +98,11 @@ export const Assets = () => {
     setPage(1);
   };
 
+  const handleLimitChange = (value: number) => {
+    setLimit(value);
+    setPage(1);
+  };
+
   const clearFilters = () => {
     setSearch('');
     setStatusFilter('');
@@ -130,7 +135,6 @@ export const Assets = () => {
   const onSubmitEdit = (data: UpdateAssetInput) => {
     if (!selectedAsset) return;
     
-    // Se a observação estiver vazia, usa a anterior
     const payload = {
       ...data,
       observation: data.observation?.trim() || selectedAsset.observation || 'Atualização de registro'
@@ -144,7 +148,6 @@ export const Assets = () => {
     });
   };
 
-  // Lógica de Seleção em Massa
   const toggleSelectAll = () => {
     if (selectedIds.length === (assetsData?.assets.length || 0)) {
       setSelectedAssetIds([]);
@@ -174,8 +177,6 @@ export const Assets = () => {
         const data: any = {};
         if (bulkData.status) data.status = bulkData.status;
         if (bulkData.location) data.location = bulkData.location;
-        
-        // Se não houver nova observação, tenta usar a do próprio ativo
         data.observation = bulkData.observation?.trim() || asset.observation || 'Atualização em massa';
 
         if (Object.keys(data).length > 0) {
@@ -220,7 +221,6 @@ export const Assets = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 relative">
-      {/* Barra de Ações em Massa (Floating) */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
           <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400">
@@ -297,43 +297,68 @@ export const Assets = () => {
         </div>
       </div>
 
-      {/* Filtros Avançados */}
-      <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center gap-4 shadow-sm">
-        <div className="flex items-center gap-2 text-text-secondary font-mono text-[10px] uppercase tracking-widest px-2">
-          <Filter size={14} className="text-primary-400" />
-          Filtros:
+      <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-6">
+          <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <SlidersHorizontal size={16} />
+              <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
+            </div>
+            <div className="flex gap-2">
+              {[10, 20, 50].map((num) => (
+                <button
+                  key={num}
+                  onClick={() => handleLimitChange(num)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${
+                    limit === num 
+                      ? 'bg-primary-500 text-white shadow-glow-purple' 
+                      : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'
+                  }`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-text-secondary">
+              <Filter size={14} className="text-primary-400" />
+              <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
+            </div>
+            
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
+            >
+              <option value="">Todos os Status</option>
+              {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+              className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
+            >
+              <option value="">Todas as Categorias</option>
+              {categoriesData?.categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {(search || statusFilter || categoryFilter) && (
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-2 px-4 py-2 text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest border-l border-border-primary ml-2 pl-4"
+            >
+              Limpar Filtros
+            </button>
+          )}
         </div>
-        
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
-        >
-          <option value="">Todos os Status</option>
-          {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
-            <option key={val} value={val}>{label}</option>
-          ))}
-        </select>
-
-        <select
-          value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-          className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer transition-all"
-        >
-          <option value="">Todas as Categorias</option>
-          {categoriesData?.categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
-          ))}
-        </select>
-
-        {(search || statusFilter || categoryFilter) && (
-          <button
-            onClick={clearFilters}
-            className="flex items-center gap-2 px-4 py-2 text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
-          >
-            Limpar Filtros
-          </button>
-        )}
       </div>
 
       <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
@@ -450,48 +475,31 @@ export const Assets = () => {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm gap-4">
-        <div className="flex items-center gap-4">
+      {assetsData && assetsData.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
           <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-            Página {page} de {assetsData?.pagination.totalPages || 1}
+            Página {page} de {assetsData.pagination.totalPages}
           </span>
-          
-          <div className="flex items-center gap-2 border-l border-border-primary pl-4">
-            <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">Exibir:</span>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(Number(e.target.value));
-                setPage(1);
-              }}
-              className="bg-hover-bg border border-border-primary rounded-lg px-2 py-1 text-[10px] font-mono font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500/50 cursor-pointer"
+          <div className="flex gap-2">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
+              <ChevronLeft size={20} />
+            </button>
+            <button
+              disabled={page >= (assetsData?.pagination.totalPages || 1)}
+              onClick={() => setPage(p => p + 1)}
+              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
         </div>
+      )}
 
-        <div className="flex gap-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage(p => p - 1)}
-            className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
-            <ChevronLeft size={20} />
-          </button>
-          <button
-            disabled={page >= (assetsData?.pagination.totalPages || 1)}
-            onClick={() => setPage(p => p + 1)}
-            className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-          >
-            <ChevronRight size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Modal de Cadastro */}
+      {/* Modals */}
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Novo Ativo (Patrimônio)">
         <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
@@ -551,7 +559,6 @@ export const Assets = () => {
         </form>
       </Modal>
 
-      {/* Modal de Edição */}
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Atualizar Ativo: ${selectedAsset?.patrimonio}`}>
         <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="p-4 rounded-xl bg-hover-bg border border-border-primary mb-4">
@@ -601,13 +608,11 @@ export const Assets = () => {
         </form>
       </Modal>
 
-      {/* Modal de Atualização em Massa */}
       <Modal isOpen={isBulkUpdateModalOpen} onClose={() => !isProcessingBulk && setIsBulkUpdateModalOpen(false)} title={`Atualizar ${selectedIds.length} Ativos`}>
         <div className="space-y-6">
           <div className="p-4 rounded-xl bg-primary-500/10 border border-primary-500/20 text-xs font-mono text-primary-400">
             Os campos deixados em branco não serão alterados nos ativos selecionados.
           </div>
-          
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Novo Status</label>
@@ -633,7 +638,6 @@ export const Assets = () => {
               />
             </div>
           </div>
-          
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observação do Histórico</label>
             <textarea
@@ -643,7 +647,6 @@ export const Assets = () => {
               onChange={(e) => setBulkData({ ...bulkData, observation: e.target.value })}
             />
           </div>
-
           <button 
             onClick={handleBulkUpdate}
             disabled={isProcessingBulk || (!bulkData.status && !bulkData.location && !bulkData.observation)}
@@ -654,7 +657,6 @@ export const Assets = () => {
         </div>
       </Modal>
 
-      {/* Modal de Histórico */}
       <Modal 
         isOpen={isHistoryModalOpen} 
         onClose={() => {
@@ -696,7 +698,6 @@ export const Assets = () => {
                       {new Date(entry.createdAt).toLocaleString()}
                     </div>
                   </div>
-                  
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2 text-xs font-mono text-text-primary">
                       <MapPin size={14} className="text-primary-400" />
@@ -711,13 +712,11 @@ export const Assets = () => {
                       )}
                     </div>
                   </div>
-
                   {entry.observation && (
                     <div className="p-3 rounded-xl bg-surface/50 border border-border-primary text-xs text-text-secondary italic">
                       "{entry.observation}"
                     </div>
                   )}
-
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-text-secondary/60 uppercase">
                     <User size={12} />
                     Modificado por: {entry.user?.matricula || 'Sistema'}
@@ -738,7 +737,7 @@ export const Assets = () => {
         onClose={() => setIsConfirmDeleteOpen(false)}
         onConfirm={() => selectedAsset && deleteAsset(selectedAsset.id)}
         title="Remover Ativo"
-        description={`Tem certeza que deseja remover o patrimônio ${selectedAsset?.patrimonio} do sistema? Esta ação é irreversível e removerá todo o histórico vinculado.`}
+        description={`Tem certeza que deseja remover o patrimônio ${selectedAsset?.patrimonio} do sistema? Esta ação é irreversível.`}
       />
 
       <ConfirmDialog
@@ -746,7 +745,7 @@ export const Assets = () => {
         onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)}
         onConfirm={handleBulkDelete}
         title={`Excluir ${selectedIds.length} Ativos`}
-        description={`Tem certeza que deseja remover permanentemente os ${selectedIds.length} ativos selecionados? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja remover permanentemente os ${selectedIds.length} ativos selecionados?`}
       />
     </div>
   );
