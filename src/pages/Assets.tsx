@@ -27,6 +27,7 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 export const Assets = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -51,11 +52,12 @@ export const Assets = () => {
 
   const { assetsData, isLoading, createAsset, isCreating, updateAsset, isUpdating, deleteAsset } = useAssets(
     page, 
-    10, 
+    limit, 
     debouncedSearch, 
     statusFilter, 
     categoryFilter
   );
+
   const { productsData } = useProducts(1, 100);
   const { categoriesData } = useCategories(1, 100);
   const { data: history, isLoading: isLoadingHistory } = useAssetHistory(assetForHistory?.id || null);
@@ -448,29 +450,46 @@ export const Assets = () => {
         </div>
       </div>
 
-      {assetsData && assetsData.pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm gap-4">
+        <div className="flex items-center gap-4">
           <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
-            Página {page} de {assetsData.pagination.totalPages}
+            Página {page} de {assetsData?.pagination.totalPages || 1}
           </span>
-          <div className="flex gap-2">
-            <button
-              disabled={page === 1}
-              onClick={() => setPage(p => p - 1)}
-              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          
+          <div className="flex items-center gap-2 border-l border-border-primary pl-4">
+            <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">Exibir:</span>
+            <select
+              value={limit}
+              onChange={(e) => {
+                setLimit(Number(e.target.value));
+                setPage(1);
+              }}
+              className="bg-hover-bg border border-border-primary rounded-lg px-2 py-1 text-[10px] font-mono font-bold text-text-primary focus:outline-none focus:ring-1 focus:ring-primary-500/50 cursor-pointer"
             >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              disabled={page === assetsData.pagination.totalPages}
-              onClick={() => setPage(p => p + 1)}
-              className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight size={20} />
-            </button>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
           </div>
         </div>
-      )}
+
+        <div className="flex gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            disabled={page >= (assetsData?.pagination.totalPages || 1)}
+            onClick={() => setPage(p => p + 1)}
+            className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
 
       {/* Modal de Cadastro */}
       <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} title="Novo Ativo (Patrimônio)">
