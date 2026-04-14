@@ -17,8 +17,8 @@ export const userService = {
     return response.data;
   },
 
-  async createUser(matricula: string, password: string, role: 'ADMIN' | 'OPERATOR'): Promise<User> {
-    const response = await api.post('/users', { matricula, password, role });
+  async createUser(name: string, matricula: string, password: string, role: 'ADMIN' | 'OPERATOR'): Promise<User> {
+    const response = await api.post('/users', { name, matricula, password, role });
     return response.data;
   },
 
@@ -26,8 +26,30 @@ export const userService = {
     await api.delete(`/users/${id}`);
   },
 
-  async updateUser(id: string, data: { password?: string; role?: 'ADMIN' | 'OPERATOR' }): Promise<User> {
+  async updateUser(id: string, data: { name?: string; password?: string; role?: 'ADMIN' | 'OPERATOR' }): Promise<User> {
     const response = await api.patch(`/users/${id}`, data);
+    return response.data;
+  },
+
+  // Perfil Self-Service
+  async updateProfile(name: string): Promise<User> {
+    const response = await api.patch('/users/profile', { name });
+    return response.data;
+  },
+
+  async changePassword(data: any): Promise<void> {
+    await api.patch('/users/password', data);
+  },
+
+  async uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/users/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data;
   },
 };

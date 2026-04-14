@@ -8,6 +8,7 @@ import { Products } from './pages/Products';
 import { Categories } from './pages/Categories';
 import { Assets } from './pages/Assets';
 import { Users } from './pages/Users';
+import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
@@ -47,6 +48,10 @@ function App() {
 
               <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
                 <Route path="/users" element={<Users />} />
+              </Route>
+
+              <Route element={<ProtectedRoute title="Meu Perfil" />}>
+                <Route path="/profile" element={<Profile />} />
               </Route>
 
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

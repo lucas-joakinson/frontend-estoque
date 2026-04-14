@@ -8,6 +8,7 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
+import { Avatar } from '../components/ui/Avatar';
 import type { User } from '../types';
 import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '../schemas/user.schema';
 
@@ -58,6 +59,7 @@ export const Users = () => {
   useEffect(() => {
     if (selectedUser) {
       resetEdit({
+        name: selectedUser.name,
         role: selectedUser.role,
         password: '',
       });
@@ -97,7 +99,8 @@ export const Users = () => {
   const onSubmitEdit = (data: UpdateUserInput) => {
     if (!selectedUser) return;
 
-    const payload: { password?: string; role?: 'ADMIN' | 'OPERATOR' } = {
+    const payload: any = {
+      name: data.name,
       role: data.role
     };
 
@@ -115,7 +118,7 @@ export const Users = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-text-primary leading-tight">
@@ -131,8 +134,8 @@ export const Users = () => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary-400 transition-colors" size={18} />
             <input
               type="text"
-              placeholder="Buscar matrícula..."
-              className="w-full pl-12 pr-4 py-3 rounded-2xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all font-mono text-sm"
+              placeholder="Buscar matrícula ou nome..."
+              className="w-full pl-12 pr-4 py-3 rounded-2xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all font-mono text-sm"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
             />
@@ -142,7 +145,7 @@ export const Users = () => {
               resetCreate();
               setIsNewUserModalOpen(true);
             }} 
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple hover:shadow-glow-purple transition-all w-full md:w-auto justify-center"
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center"
           >
             <UserPlus size={18} /> Novo Usuário
           </button>
@@ -191,7 +194,7 @@ export const Users = () => {
           {(search || roleFilter) && (
             <button
               onClick={clearFilters}
-              className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest"
+              className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
             >
               Limpar Filtros
             </button>
@@ -213,8 +216,8 @@ export const Users = () => {
           >
             <option value="createdAt-desc">Mais Recentes</option>
             <option value="createdAt-asc">Mais Antigos</option>
-            <option value="matricula-asc">Matrícula (A-Z)</option>
-            <option value="matricula-desc">Matrícula (Z-A)</option>
+            <option value="name-asc">Nome (A-Z)</option>
+            <option value="name-desc">Nome (Z-A)</option>
           </select>
         </div>
       </div>
@@ -224,6 +227,7 @@ export const Users = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
+                <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Usuário</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Matrícula</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Permissão</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Criado em</th>
@@ -234,19 +238,23 @@ export const Users = () => {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
-                    <td className="px-6 py-4"><Skeleton className="h-4 w-48" /></td>
+                    <td className="px-6 py-4 flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-4 w-32" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-6 w-20" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
-                    <td className="px-6 py-4 flex justify-end gap-2">
-                      <Skeleton className="h-8 w-8" />
-                      <Skeleton className="h-8 w-8" />
-                    </td>
+                    <td className="px-6 py-4 flex justify-end gap-2"><Skeleton className="h-8 w-8" /><Skeleton className="h-8 w-8" /></td>
                   </tr>
                 ))
               ) : usersData?.users && usersData.users.length > 0 ? (
                 usersData.users.map((user: User) => (
                   <tr key={user.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
-                    <td className="px-6 py-4 text-sm text-text-primary font-bold font-mono tracking-tight">{user.matricula}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
+                        <span className="text-sm font-bold text-text-primary">{user.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-text-secondary font-mono tracking-tight">{user.matricula}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border ${
                         user.role === 'ADMIN' 
@@ -261,29 +269,27 @@ export const Users = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsEditUserModalOpen(true);
+                          }}
+                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
+                          title="Editar Usuário"
+                        >
+                          <Edit2 size={14} />
+                        </button>
                         {user.matricula !== 'admin' && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsEditUserModalOpen(true);
-                              }}
-                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 hover:border-primary-500/30 transition-all"
-                              title="Editar Usuário"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setIsConfirmOpen(true);
-                              }}
-                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 hover:border-red-500/30 transition-all"
-                              title="Remover Usuário"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </>
+                          <button
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setIsConfirmOpen(true);
+                            }}
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"
+                            title="Remover Usuário"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         )}
                       </div>
                     </td>
@@ -291,7 +297,7 @@ export const Users = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
+                  <td colSpan={5} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
                     Nenhum usuário encontrado.
                   </td>
                 </tr>
@@ -325,102 +331,102 @@ export const Users = () => {
         </div>
       )}
 
-      {/* Modal de Novo Usuário */}
-      <Modal
-        isOpen={isNewUserModalOpen}
-        onClose={() => setIsNewUserModalOpen(false)}
-        title="Novo Usuário"
-      >
+      {/* Modal Novo Usuário */}
+      <Modal isOpen={isNewUserModalOpen} onClose={() => setIsNewUserModalOpen(false)} title="Novo Usuário">
         <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
-              Matrícula <span className="text-primary-400 lowercase">(min. 6 chars)</span>
-            </label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
             <input
               type="text"
-              placeholder="Digite a matrícula"
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${createErrors.matricula ? 'border-red-500' : 'border-border-primary'}`}
-              {...registerCreate('matricula')}
+              placeholder="Digite o nome do usuário"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.name ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerCreate('name')}
             />
-            {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono">{createErrors.matricula.message}</span>}
+            {createErrors.name && <span className="text-[10px] text-red-500 font-mono">{createErrors.name.message}</span>}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula</label>
+              <input
+                type="text"
+                placeholder="Ex: 123456"
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.matricula ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerCreate('matricula')}
+              />
+              {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono">{createErrors.matricula.message}</span>}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Permissão</label>
+              <select
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerCreate('role')}
+              >
+                <option value="OPERATOR">OPERADOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
-              Senha Inicial <span className="text-primary-400 lowercase">(min. 6 chars)</span>
-            </label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Senha Inicial</label>
             <input
               type="password"
               placeholder="••••••••"
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${createErrors.password ? 'border-red-500' : 'border-border-primary'}`}
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.password ? 'border-red-500' : 'border-border-primary'}`}
               {...registerCreate('password')}
             />
             {createErrors.password && <span className="text-[10px] text-red-500 font-mono">{createErrors.password.message}</span>}
           </div>
-          <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
-            <select
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer ${createErrors.role ? 'border-red-500' : 'border-border-primary'}`}
-              {...registerCreate('role')}
-            >
-              <option value="OPERATOR">OPERADOR (Padrão)</option>
-              <option value="ADMIN">ADMINISTRADOR</option>
-            </select>
-            {createErrors.role && <span className="text-[10px] text-red-500 font-mono">{createErrors.role.message}</span>}
-          </div>
-          <div className="pt-4">
-            <button 
-              type="submit" 
-              disabled={isCreating}
-              className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
-            >
-              {isCreating ? <Spinner size={18} /> : 'Criar Usuário'}
-            </button>
-          </div>
+          <button 
+            type="submit" 
+            disabled={isCreating}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-widest transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+          >
+            {isCreating ? <Spinner /> : 'Criar Usuário'}
+          </button>
         </form>
       </Modal>
 
-      {/* Modal de Edição de Usuário */}
-      <Modal
-        isOpen={isEditUserModalOpen}
-        onClose={() => {
-          setIsEditUserModalOpen(false);
-          setSelectedUser(null);
-        }}
-        title={`Editar Usuário: ${selectedUser?.matricula}`}
-      >
+      {/* Modal Editar Usuário */}
+      <Modal isOpen={isEditUserModalOpen} onClose={() => setIsEditUserModalOpen(false)} title={`Editar: ${selectedUser?.name}`}>
         <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">
-              Nova Senha <span className="text-primary-400 lowercase">(opcional - min. 6 chars)</span>
-            </label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
             <input
-              type="password"
-              placeholder="Deixe em branco para manter"
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary placeholder:text-text-secondary/50 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${editErrors.password ? 'border-red-500' : 'border-border-primary'}`}
-              {...registerEdit('password')}
+              type="text"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.name ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerEdit('name')}
             />
-            {editErrors.password && <span className="text-[10px] text-red-500 font-mono">{editErrors.password.message}</span>}
+            {editErrors.name && <span className="text-[10px] text-red-500 font-mono">{editErrors.name.message}</span>}
           </div>
-          <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest mb-2">Permissão</label>
-            <select
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all cursor-pointer ${editErrors.role ? 'border-red-500' : 'border-border-primary'}`}
-              {...registerEdit('role')}
-            >
-              <option value="OPERATOR">OPERADOR</option>
-              <option value="ADMIN">ADMINISTRADOR</option>
-            </select>
-            {editErrors.role && <span className="text-[10px] text-red-500 font-mono">{editErrors.role.message}</span>}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Permissão</label>
+              <select
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerEdit('role')}
+              >
+                <option value="OPERATOR">OPERADOR</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nova Senha</label>
+              <input
+                type="password"
+                placeholder="Manter atual..."
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.password ? 'border-red-500' : 'border-border-primary'}`}
+                {...registerEdit('password')}
+              />
+              {editErrors.password && <span className="text-[10px] text-red-500 font-mono">{editErrors.password.message}</span>}
+            </div>
           </div>
-          <div className="pt-4">
-            <button 
-              type="submit" 
-              disabled={isUpdating}
-              className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
-            >
-              {isUpdating ? <Spinner size={18} /> : 'Salvar Alterações'}
-            </button>
-          </div>
+          <button 
+            type="submit" 
+            disabled={isUpdating}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-widest transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+          >
+            {isUpdating ? <Spinner /> : 'Salvar Alterações'}
+          </button>
         </form>
       </Modal>
 
@@ -429,7 +435,7 @@ export const Users = () => {
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={() => selectedUser && deleteUser(selectedUser.id)}
         title="Excluir Usuário"
-        description={`Tem certeza que deseja remover o usuário "${selectedUser?.matricula}"? Esta ação revogará todo o acesso dele ao sistema.`}
+        description={`Tem certeza que deseja remover o usuário "${selectedUser?.name}"?`}
       />
     </div>
   );

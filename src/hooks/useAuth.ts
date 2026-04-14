@@ -7,16 +7,16 @@ import type { LoginInput } from '../schemas/auth.schema';
 
 export const useAuth = () => {
   const navigate = useNavigate();
-  const { login: contextLogin, logout: contextLogout, isAdmin, isAuthenticated } = useAuthContext();
+  const { login: contextLogin, logout: contextLogout, isAdmin, isAuthenticated, user } = useAuthContext();
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
     onSuccess: (data) => {
-      contextLogin(data.token, data.role);
+      contextLogin(data.token, data.user);
       toast.success('Bem-vindo ao sistema!');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao realizar login');
     },
   });
@@ -24,10 +24,10 @@ export const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.register(data.matricula, data.password),
     onSuccess: () => {
-      toast.success('Conta criada com sucesso! Faça login para acessar.');
+      toast.success('Conta criada com sucesso!');
       navigate('/login');
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
+    onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao criar conta');
     },
   });
@@ -40,6 +40,6 @@ export const useAuth = () => {
     logout: contextLogout,
     isAdmin,
     isAuthenticated,
+    user
   };
 };
-

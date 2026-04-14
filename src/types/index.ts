@@ -1,6 +1,8 @@
 export interface User {
   id: string;
   matricula: string;
+  name: string;
+  avatarUrl?: string | null;
   role: 'ADMIN' | 'OPERATOR';
   createdAt: string;
   updatedAt: string;
@@ -50,6 +52,7 @@ export interface AssetHistory {
 export interface AuthResponse {
   token: string;
   role: 'ADMIN' | 'OPERATOR';
+  user: User;
 }
 
 export interface UsersResponse {

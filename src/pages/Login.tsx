@@ -2,13 +2,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/ui/Spinner';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { loginSchema, type LoginInput } from '../schemas/auth.schema';
 
 export const Login = () => {
-  const { login, isLoggingIn } = useAuth();
+  const { login, isLoggingIn, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const token = localStorage.getItem('token');
 
   const {
     register,
@@ -18,7 +17,7 @@ export const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  if (token) {
+  if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 

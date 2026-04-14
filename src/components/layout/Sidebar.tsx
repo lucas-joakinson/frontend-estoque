@@ -1,20 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Package, Tag, ClipboardList, LogOut, Users as UsersIcon } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthContext } from '../../contexts/AuthContext';
+import { Avatar } from '../ui/Avatar';
 
 export const Sidebar = () => {
   const { logout, isAdmin } = useAuth();
-  const token = localStorage.getItem('token');
-
-  const getMatricula = () => {
-    if (!token) return 'USR';
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.matricula || 'USR';
-    } catch {
-      return 'USR';
-    }
-  };
+  const { user } = useAuthContext();
 
   const links = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -50,7 +42,6 @@ export const Sidebar = () => {
           </NavLink>
         ))}
 
-        {/* Link administrativo exclusivo para ADMIN */}
         {isAdmin && (
           <NavLink
             to="/users"
@@ -67,24 +58,22 @@ export const Sidebar = () => {
       </nav>
 
       <div className="absolute bottom-0 w-full p-6 border-t border-border-primary">
-        <div className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-hover-bg border border-border-primary group transition-all duration-200">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500/20 to-primary-700/20 border border-border-primary flex items-center justify-center text-primary-400 font-bold text-sm">
-            {getMatricula().substring(0, 3).toUpperCase()}
-          </div>
+        <NavLink to="/profile" className="flex items-center gap-4 px-4 py-3 rounded-2xl bg-hover-bg border border-border-primary group transition-all duration-200 hover:border-primary-500/30 hover:bg-primary-500/5 cursor-pointer mb-2">
+          <Avatar name={user?.name || 'Usuário'} avatarUrl={user?.avatarUrl} size="md" className="group-hover:scale-110 transition-transform" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-text-primary truncate">{getMatricula()}</p>
-            <p className="text-[10px] font-mono text-text-secondary uppercase tracking-widest">
-              {localStorage.getItem('role') || 'Operador'}
+            <p className="text-sm font-bold text-text-primary truncate group-hover:text-primary-400 transition-colors">{user?.name || 'Usuário'}</p>
+            <p className="text-[10px] font-mono text-text-secondary uppercase tracking-widest truncate">
+              {user?.role || 'Operador'} • {user?.matricula || '---'}
             </p>
           </div>
-          <button
-            onClick={logout}
-            className="text-text-secondary hover:text-red-400 transition-colors p-1"
-            title="Sair"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+        </NavLink>
+        
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-mono font-bold text-text-secondary hover:text-red-400 hover:bg-red-500/5 transition-all duration-200 uppercase tracking-widest"
+        >
+          <LogOut size={14} /> Sair do Sistema
+        </button>
       </div>
     </aside>
   );

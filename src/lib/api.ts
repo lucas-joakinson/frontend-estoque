@@ -25,12 +25,9 @@ api.interceptors.response.use(
 
     if (status === 401 && !window.location.pathname.includes('/login')) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       localStorage.removeItem('role');
       toast.error('Sessão expirada. Faça login novamente.');
-    
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 1500);
     }
 
     if (status === 403) {
