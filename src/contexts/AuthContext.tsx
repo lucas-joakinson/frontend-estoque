@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../services/user.service';
-import type { User } from '../types';
+import type { User, UserPermissions } from '../types';
 
 interface AuthContextType {
   user: User | null;
@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
   refreshProfile: () => Promise<void>;
+  hasPermission: (permission: keyof UserPermissions) => boolean;
   isAuthenticated: boolean;
   isAdmin: boolean;
   isLoading: boolean;
@@ -16,16 +17,52 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const getDefaultPermissions = (role: 'ADMIN' | 'OPERATOR'): UserPermissions => {
+  if (role === 'ADMIN') {
+    return {
+      canManageUsers: true,
+      canManageProducts: true,
+      canManageCategories: true,
+      canManageAssets: true,
+      canDeleteItems: true,
+      canViewReports: true,
+    };
+  }
+  return {
+    canManageUsers: false,
+    canManageProducts: true,
+    canManageCategories: true,
+    canManageAssets: true,
+    canDeleteItems: false,
+    canViewReports: false,
+  };
+};
+
 const getSafeUser = (): User | null => {
   const saved = localStorage.getItem('user');
   if (!saved || saved === 'undefined') return null;
-  try { return JSON.parse(saved); } catch { return null; }
+  try { 
+    const user = JSON.parse(saved);
+    if (user && !user.permissions) {
+      user.permissions = getDefaultPermissions(user.role);
+    }
+    return user;
+  } catch { 
+    return null; 
+  }
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(getSafeUser);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    navigate('/login', { replace: true });
+  }, [navigate]);
 
   const refreshProfile = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -36,6 +73,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       const userData = await userService.getProfile();
+      
+      if (!userData.permissions) {
+        userData.permissions = getDefaultPermissions(userData.role);
+      }
+      
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
     } catch (error) {
@@ -46,16 +88,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [logout]);
 
   const login = (token: string, userData: User | any) => {
     localStorage.setItem('token', token);
     
     if (userData?.id && userData?.name) {
+      if (!userData.permissions) {
+        userData.permissions = getDefaultPermissions(userData.role);
+      }
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData as User);
     } else {
-      const placeholder = { ...userData, name: 'Carregando...' };
+      const placeholder = { 
+        ...userData, 
+        name: 'Carregando...',
+        permissions: getDefaultPermissions(userData.role || 'OPERATOR')
+      };
       setUser(placeholder as User);
       refreshProfile();
     }
@@ -63,12 +112,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     navigate('/dashboard', { replace: true });
   };
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    navigate('/login', { replace: true });
-  }, [navigate]);
+  const hasPermission = useCallback((permission: keyof UserPermissions) => {
+    if (!user) return false;
+    if (user.role === 'ADMIN') return true;
+    return !!user.permissions?.[permission];
+  }, [user]);
 
   const updateUser = useCallback((userData: Partial<User>) => {
     setUser(prev => {
@@ -104,10 +152,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     logout,
     updateUser,
     refreshProfile,
+    hasPermission,
     isAuthenticated: !!user && !!localStorage.getItem('token'),
     isAdmin: user?.role === 'ADMIN',
     isLoading
-  }), [user, logout, updateUser, refreshProfile, isLoading]);
+  }), [user, logout, updateUser, refreshProfile, hasPermission, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -1,9 +1,19 @@
+export interface UserPermissions {
+  canManageUsers: boolean;
+  canManageProducts: boolean;
+  canManageCategories: boolean;
+  canManageAssets: boolean;
+  canDeleteItems: boolean;
+  canViewReports: boolean;
+}
+
 export interface User {
   id: string;
   matricula: string;
   name: string;
   avatarUrl?: string | null;
   role: 'ADMIN' | 'OPERATOR';
+  permissions: UserPermissions;
   createdAt: string;
   updatedAt: string;
 }
