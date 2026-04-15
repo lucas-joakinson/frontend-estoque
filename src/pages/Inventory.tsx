@@ -43,8 +43,12 @@ type InventoryTab = 'products' | 'categories' | 'assets';
 
 export const Inventory = () => {
   const [activeTab, setActiveTab] = useState<InventoryTab>('assets');
-  const { isAdmin } = useAuth();
+  const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
+
+  const canManageAssets = hasPermission('canManageAssets');
+  const canManageCategories = hasPermission('canManageCategories');
+  const canDelete = hasPermission('canDeleteItems');
 
   // --- LOGIC: ASSETS (PATRIMÔNIO) ---
   const [assetPage, setAssetPage] = useState(1);
@@ -437,8 +441,12 @@ export const Inventory = () => {
                         <td className="px-6 py-4">
                           <div className="flex justify-end gap-2">
                             <button onClick={() => { setAssetForHistory(asset); setIsAssetHistoryModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-amber-400 transition-all"><History size={14} /></button>
-                            <button onClick={() => { setSelectedAsset(asset); setIsAssetEditModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"><Edit2 size={14} /></button>
-                            <button onClick={() => { setSelectedAsset(asset); setIsAssetDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button>
+                            {canManageAssets && (
+                              <button onClick={() => { setSelectedAsset(asset); setIsAssetEditModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"><Edit2 size={14} /></button>
+                            )}
+                            {canDelete && (
+                              <button onClick={() => { setSelectedAsset(asset); setIsAssetDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -549,7 +557,7 @@ export const Inventory = () => {
                 onChange={(e) => handleCatSearch(e.target.value)}
               />
             </div>
-            {isAdmin && (
+            {canManageCategories && (
               <button onClick={() => { setSelectedCategory(null); setIsCatModalOpen(true); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center">
                 <Plus size={18} /> Nova Categoria
               </button>
@@ -578,12 +586,14 @@ export const Inventory = () => {
                       <tr key={c.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
                         <td className="px-6 py-4 text-sm text-text-primary font-medium">{c.name}</td>
                         <td className="px-6 py-4">
-                          {isAdmin && (
-                            <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2">
+                            {canManageCategories && (
                               <button onClick={() => { setSelectedCategory(c); setIsCatModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"><Edit2 size={16} /></button>
+                            )}
+                            {canDelete && (
                               <button onClick={() => { setSelectedCategory(c); setIsCatDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={16} /></button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))
