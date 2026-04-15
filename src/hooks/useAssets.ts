@@ -76,7 +76,7 @@ export const useAssets = (
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { patrimonio: string; productId: string; status: AssetStatus; location: string }) => 
+    mutationFn: (data: { patrimonio: string; productId: string; status: AssetStatus; location: string; responsible?: string | null }) => 
       assetService.createAsset(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
@@ -88,7 +88,7 @@ export const useAssets = (
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: AssetStatus; location: string; notes?: string } }) => 
+    mutationFn: ({ id, data }: { id: string; data: { status: AssetStatus; location: string; responsible?: string | null; notes?: string } }) => 
       assetService.updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });

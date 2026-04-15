@@ -236,6 +236,7 @@ export const Dashboard = () => {
                 <tr>
                   <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Patrimônio</th>
                   <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item</th>
+                  <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Responsável</th>
                   <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Status</th>
                   <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Localização</th>
                   <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-right">Última Modif.</th>
@@ -265,6 +266,9 @@ export const Dashboard = () => {
                           <span className="text-sm font-bold text-text-primary">{asset.product.name}</span>
                           <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">{asset.product.brand || 'Sem Marca'}</span>
                         </div>
+                      </td>
+                      <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">
+                        {asset.responsible || '---'}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[asset.status]?.color}`}>

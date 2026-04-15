@@ -145,6 +145,7 @@ export const Inventory = () => {
       data: { 
         status: data.status,
         location: data.location,
+        responsible: data.responsible,
         notes: data.observation?.trim() || 'Atualização de registro' 
       } 
     }, {
@@ -424,6 +425,7 @@ export const Inventory = () => {
                     </th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Patrimônio</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item / Marca</th>
+                    <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Responsável</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Categoria</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Status</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-right">Ações</th>
@@ -451,6 +453,9 @@ export const Inventory = () => {
                             <span className="text-sm font-bold text-text-primary">{asset.product?.name || 'Item Removido'}</span>
                             <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">{asset.product?.brand || 'Sem Marca'}</span>
                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">
+                          {asset.responsible || '---'}
                         </td>
                         <td className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase">{asset.product?.category?.name || 'Sem Categoria'}</td>
                         <td className="px-6 py-4 text-center">
@@ -734,6 +739,10 @@ export const Inventory = () => {
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Localização</label>
               <input type="text" className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${assetCreateErrors.location ? 'border-red-500' : 'border-border-primary'}`} {...registerAssetCreate('location')} />
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Responsável (Opcional)</label>
+            <input type="text" className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50" {...registerAssetCreate('responsible')} />
           </div>
           <button type="submit" disabled={isCreatingAsset} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12">
             {isCreatingAsset ? <Spinner /> : 'Registrar Ativo'}
