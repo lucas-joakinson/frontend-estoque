@@ -4,9 +4,7 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
-import { Products } from './pages/Products';
-import { Categories } from './pages/Categories';
-import { Assets } from './pages/Assets';
+import { Inventory } from './pages/Inventory';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -37,16 +35,8 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
               </Route>
 
-              <Route element={<ProtectedRoute title="Gerenciar Produtos" />}>
-                <Route path="/products" element={<Products />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Categorias" />}>
-                <Route path="/categories" element={<Categories />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Gestão de Ativos (Patrimônio)" />}>
-                <Route path="/assets" element={<Assets />} />
+              <Route element={<ProtectedRoute title="Gerenciar Estoque (Geral)" />}>
+                <Route path="/inventory" element={<Inventory />} />
               </Route>
 
               <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
