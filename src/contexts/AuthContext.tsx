@@ -17,36 +17,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const getDefaultPermissions = (role: 'ADMIN' | 'OPERATOR'): UserPermissions => {
-  if (role === 'ADMIN') {
-    return {
-      canManageUsers: true,
-      canManageProducts: true,
-      canManageCategories: true,
-      canManageAssets: true,
-      canDeleteItems: true,
-      canViewReports: true,
-    };
-  }
-  return {
-    canManageUsers: false,
-    canManageProducts: true,
-    canManageCategories: true,
-    canManageAssets: true,
-    canDeleteItems: false,
-    canViewReports: false,
-  };
-};
-
 const getSafeUser = (): User | null => {
   const saved = localStorage.getItem('user');
   if (!saved || saved === 'undefined') return null;
   try { 
-    const user = JSON.parse(saved);
-    if (user && !user.permissions) {
-      user.permissions = getDefaultPermissions(user.role);
-    }
-    return user;
+    return JSON.parse(saved);
   } catch { 
     return null; 
   }
@@ -73,15 +48,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     try {
       const userData = await userService.getProfile();
-      
-      if (!userData.permissions) {
-        userData.permissions = getDefaultPermissions(userData.role);
-      }
-      
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
     } catch (error) {
-      console.error('Erro ao carregar perfil:', error);
+      if ((error as any).response?.status !== 404) {
+        console.error('Erro ao carregar perfil:', error);
+      }
+      
       if ((error as any).response?.status === 401) {
         logout();
       }
@@ -92,20 +65,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (token: string, userData: User | any) => {
     localStorage.setItem('token', token);
-    
-    if (userData?.id && userData?.name) {
-      if (!userData.permissions) {
-        userData.permissions = getDefaultPermissions(userData.role);
-      }
+    if (userData?.permissions) {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData as User);
     } else {
-      const placeholder = { 
-        ...userData, 
-        name: 'Carregando...',
-        permissions: getDefaultPermissions(userData.role || 'OPERATOR')
-      };
-      setUser(placeholder as User);
       refreshProfile();
     }
     

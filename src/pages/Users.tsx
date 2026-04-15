@@ -6,7 +6,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { 
   Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, 
   Edit2, Shield, Users as UsersIcon, Save, RotateCcw, Package, Tag, 
-  ClipboardList, BarChart3, AlertTriangle 
+  ClipboardList, BarChart3, AlertTriangle, Plus 
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -15,7 +15,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { Avatar } from '../components/ui/Avatar';
 import { toast } from 'sonner';
 import { permissionService } from '../services/permission.service';
-import type { User, UserPermissions } from '../types';
+import type { User, UserPermissions, Role } from '../types';
 import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '../schemas/user.schema';
 
 interface PermissionConfig {
@@ -69,7 +69,6 @@ type TabType = 'users' | 'permissions';
 export const Users = () => {
   const [activeTab, setActiveTab] = useState<TabType>('users');
   
-  // States para Usuários
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -83,11 +82,16 @@ export const Users = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // States para Permissões
-  const [activeRole, setActiveRole] = useState<'ADMIN' | 'OPERATOR'>('OPERATOR');
+  // States para Permissões e Roles
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [activeRole, setActiveRole] = useState<string>('OPERATOR');
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [isPermissionsLoading, setIsPermissionsLoading] = useState(false);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  
+  const [isNewRoleModalOpen, setIsNewRoleModalOpen] = useState(false);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [isCreatingRole, setIsCreatingRole] = useState(false);
 
   const { usersData, isLoading: isUsersLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(
     page, 
@@ -119,6 +123,22 @@ export const Users = () => {
     resolver: zodResolver(updateUserSchema),
   });
 
+  const loadRoles = async () => {
+    try {
+      const data = await permissionService.listRoles();
+      setRoles(data);
+      if (data.length > 0 && !activeRole) {
+        setActiveRole(data[0].name);
+      }
+    } catch (error) {
+      toast.error('Erro ao carregar cargos.');
+    }
+  };
+
+  useEffect(() => {
+    loadRoles();
+  }, []);
+
   useEffect(() => {
     if (selectedUser) {
       resetEdit({
@@ -130,12 +150,12 @@ export const Users = () => {
   }, [selectedUser, resetEdit]);
 
   useEffect(() => {
-    if (activeTab === 'permissions') {
+    if (activeTab === 'permissions' && activeRole) {
       loadPermissions(activeRole);
     }
   }, [activeTab, activeRole]);
 
-  const loadPermissions = async (role: 'ADMIN' | 'OPERATOR') => {
+  const loadPermissions = async (role: string) => {
     setIsPermissionsLoading(true);
     try {
       const data = await permissionService.getRolePermissions(role);
@@ -165,6 +185,25 @@ export const Users = () => {
       toast.error('Erro ao salvar permissões.');
     } finally {
       setIsSavingPermissions(false);
+    }
+  };
+
+  const handleCreateRole = async () => {
+    if (!newRoleName.trim()) {
+      toast.error('O nome do cargo é obrigatório.');
+      return;
+    }
+    setIsCreatingRole(true);
+    try {
+      await permissionService.createRole(newRoleName.toUpperCase());
+      toast.success('Cargo criado com sucesso!');
+      setNewRoleName('');
+      setIsNewRoleModalOpen(false);
+      loadRoles();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao criar cargo.');
+    } finally {
+      setIsCreatingRole(false);
     }
   };
 
@@ -302,13 +341,14 @@ export const Users = () => {
                   <span className="text-xs font-mono uppercase tracking-widest">Cargo:</span>
                 </div>
                 <select
-                  className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
+                  className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer uppercase"
                   value={roleFilter}
                   onChange={(e) => handleRoleFilterChange(e.target.value)}
                 >
                   <option value="">Todos</option>
-                  <option value="ADMIN">ADMIN</option>
-                  <option value="OPERATOR">OPERADOR</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.name}>{role.name}</option>
+                  ))}
                 </select>
               </div>
 
@@ -377,7 +417,7 @@ export const Users = () => {
                         </td>
                         <td className="px-6 py-4 text-xs text-text-secondary font-mono tracking-tight">{user.matricula}</td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border ${
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold border uppercase ${
                             user.role === 'ADMIN' 
                               ? 'bg-primary-500/10 text-primary-400 border-primary-500/20' 
                               : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -459,25 +499,25 @@ export const Users = () => {
             <div className="bg-surface border border-border-primary rounded-3xl p-6 space-y-4 shadow-sm">
               <h3 className="text-[10px] font-mono text-text-secondary uppercase tracking-[0.2em] ml-2">Cargos Disponíveis</h3>
               <div className="space-y-2">
-                {['OPERATOR', 'ADMIN'].map((role) => (
+                {roles.map((role) => (
                   <button
-                    key={role}
-                    onClick={() => setActiveRole(role as any)}
+                    key={role.id}
+                    onClick={() => setActiveRole(role.name)}
                     className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
-                      activeRole === role 
+                      activeRole === role.name 
                         ? 'bg-primary-500/10 border-primary-500/30 text-primary-400 shadow-glow-purple/10' 
                         : 'bg-hover-bg border-border-primary text-text-secondary hover:text-text-primary hover:border-border-secondary'
                     }`}
                   >
-                    <span className="text-xs font-bold font-mono tracking-wider">{role}</span>
-                    {activeRole === role && <ChevronRight size={14} />}
+                    <span className="text-xs font-bold font-mono tracking-wider uppercase">{role.name}</span>
+                    {activeRole === role.name && <ChevronRight size={14} />}
                   </button>
                 ))}
                 <button
-                  onClick={() => toast.info('Funcionalidade de criar novos cargos disponível em breve.')}
+                  onClick={() => setIsNewRoleModalOpen(true)}
                   className="w-full flex items-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-border-primary text-text-secondary hover:text-primary-400 hover:border-primary-500/30 transition-all group"
                 >
-                  <UserPlus size={14} className="group-hover:scale-110 transition-transform" />
+                  <Plus size={14} className="group-hover:scale-110 transition-transform" />
                   <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Novo Cargo</span>
                 </button>
               </div>
@@ -502,7 +542,7 @@ export const Users = () => {
                   <Shield size={24} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-text-primary">Permissões de {activeRole}</h3>
+                  <h3 className="text-xl font-bold text-text-primary uppercase">Permissões de {activeRole}</h3>
                   <p className="text-xs text-text-secondary mt-1">Configure o nível de acesso para este cargo</p>
                 </div>
               </div>
@@ -565,50 +605,77 @@ export const Users = () => {
         </div>
       )}
 
+      {/* Modal Novo Cargo */}
+      <Modal isOpen={isNewRoleModalOpen} onClose={() => setIsNewRoleModalOpen(false)} title="Novo Cargo">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Nome do Cargo</label>
+            <input
+              type="text"
+              placeholder="Ex: SUPERVISOR"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 uppercase"
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+            />
+            <p className="text-[10px] text-text-secondary font-mono mt-1 px-1">
+              * O cargo será criado com permissões restritas por padrão.
+            </p>
+          </div>
+          <button 
+            onClick={handleCreateRole}
+            disabled={isCreatingRole}
+            className="w-full py-4 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-widest transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12 disabled:opacity-50"
+          >
+            {isCreatingRole ? <Spinner /> : 'Criar Novo Cargo'}
+          </button>
+        </div>
+      </Modal>
+
       {/* Modal Novo Usuário */}
       <Modal isOpen={isNewUserModalOpen} onClose={() => setIsNewUserModalOpen(false)} title="Novo Usuário">
         <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Nome Completo</label>
             <input
               type="text"
               placeholder="Digite o nome do usuário"
               className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.name ? 'border-red-500' : 'border-border-primary'}`}
               {...registerCreate('name')}
             />
-            {createErrors.name && <span className="text-[10px] text-red-500 font-mono">{createErrors.name.message}</span>}
+            {createErrors.name && <span className="text-[10px] text-red-500 font-mono px-1">{createErrors.name.message}</span>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Matrícula</label>
               <input
                 type="text"
                 placeholder="Ex: 123456"
                 className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.matricula ? 'border-red-500' : 'border-border-primary'}`}
                 {...registerCreate('matricula')}
               />
-              {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono">{createErrors.matricula.message}</span>}
+              {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono px-1">{createErrors.matricula.message}</span>}
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Cargo</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Cargo</label>
               <select
-                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 uppercase ${createErrors.role ? 'border-red-500' : 'border-border-primary'}`}
                 {...registerCreate('role')}
               >
-                <option value="OPERATOR">OPERADOR</option>
-                <option value="ADMIN">ADMIN</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.name}>{role.name}</option>
+                ))}
               </select>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Senha Inicial</label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Senha Inicial</label>
             <input
               type="password"
               placeholder="••••••••"
               className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.password ? 'border-red-500' : 'border-border-primary'}`}
               {...registerCreate('password')}
             />
-            {createErrors.password && <span className="text-[10px] text-red-500 font-mono">{createErrors.password.message}</span>}
+            {createErrors.password && <span className="text-[10px] text-red-500 font-mono px-1">{createErrors.password.message}</span>}
           </div>
           <button 
             type="submit" 
@@ -624,34 +691,35 @@ export const Users = () => {
       <Modal isOpen={isEditUserModalOpen} onClose={() => setIsEditUserModalOpen(false)} title={`Editar: ${selectedUser?.name}`}>
         <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="space-y-2">
-            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Nome Completo</label>
             <input
               type="text"
               className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.name ? 'border-red-500' : 'border-border-primary'}`}
               {...registerEdit('name')}
             />
-            {editErrors.name && <span className="text-[10px] text-red-500 font-mono">{editErrors.name.message}</span>}
+            {editErrors.name && <span className="text-[10px] text-red-500 font-mono px-1">{editErrors.name.message}</span>}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Cargo</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Cargo</label>
               <select
-                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.role ? 'border-red-500' : 'border-border-primary'}`}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 uppercase ${editErrors.role ? 'border-red-500' : 'border-border-primary'}`}
                 {...registerEdit('role')}
               >
-                <option value="OPERATOR">OPERADOR</option>
-                <option value="ADMIN">ADMIN</option>
+                {roles.map(role => (
+                  <option key={role.id} value={role.name}>{role.name}</option>
+                ))}
               </select>
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nova Senha</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Nova Senha</label>
               <input
                 type="password"
                 placeholder="Manter atual..."
                 className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.password ? 'border-red-500' : 'border-border-primary'}`}
                 {...registerEdit('password')}
               />
-              {editErrors.password && <span className="text-[10px] text-red-500 font-mono">{editErrors.password.message}</span>}
+              {editErrors.password && <span className="text-[10px] text-red-500 font-mono px-1">{editErrors.password.message}</span>}
             </div>
           </div>
           <button 

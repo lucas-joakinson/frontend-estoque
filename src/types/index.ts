@@ -7,12 +7,18 @@ export interface UserPermissions {
   canViewReports: boolean;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+  permissions: UserPermissions;
+}
+
 export interface User {
   id: string;
   matricula: string;
   name: string;
   avatarUrl?: string | null;
-  role: 'ADMIN' | 'OPERATOR';
+  role: string;
   permissions: UserPermissions;
   createdAt: string;
   updatedAt: string;
