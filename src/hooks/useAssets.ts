@@ -17,22 +17,25 @@ export const useAssets = (
   const assetsQuery = useQuery({
     queryKey: ['assets', page, limit, search, status, categoryId, sortBy, order],
     queryFn: async () => {
-      const data = await assetService.listAssets(page, limit, search, status, categoryId, sortBy, order);
+      const response: any = await assetService.listAssets(page, limit, search, status, categoryId, sortBy, order);
       
-      let normalizedData: AssetsResponse;
-      if (Array.isArray(data)) {
-        normalizedData = {
-          assets: data,
-          pagination: {
-            page: 1,
-            limit: data.length,
-            total: data.length,
-            totalPages: 1
-          }
+      let assets = [];
+      let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+
+      if (Array.isArray(response)) {
+        assets = response;
+        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
+      } else if (response) {
+        assets = response.assets || response.data || [];
+        pagination = response.pagination || { 
+          page: 1, 
+          limit: assets.length, 
+          total: assets.length, 
+          totalPages: 1 
         };
-      } else {
-        normalizedData = data;
       }
+
+      let normalizedData: AssetsResponse = { assets, pagination };
 
       if (status || categoryId) {
         let filteredAssets = [...normalizedData.assets];
@@ -42,7 +45,7 @@ export const useAssets = (
         }
         
         if (categoryId) {
-          filteredAssets = filteredAssets.filter(a => a.product.categoryId === categoryId);
+          filteredAssets = filteredAssets.filter(a => a && a.product && a.product.categoryId === categoryId);
         }
 
         return {

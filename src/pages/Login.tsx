@@ -17,10 +17,6 @@ export const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const onSubmit = (data: LoginInput) => {
     login(data);
   };

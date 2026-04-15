@@ -24,22 +24,25 @@ export const useUsers = (
   const usersQuery = useQuery({
     queryKey: ['users', page, limit, search, role, sortBy, order],
     queryFn: async () => {
-      const data = await userService.listUsers(page, limit, search, role, sortBy, order);
+      const response: any = await userService.listUsers(page, limit, search, role, sortBy, order);
       
-      let normalizedData: UsersResponse;
-      if (Array.isArray(data)) {
-        normalizedData = {
-          users: data,
-          pagination: {
-            page: 1,
-            limit: data.length,
-            total: data.length,
-            totalPages: 1
-          }
+      let users = [];
+      let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+
+      if (Array.isArray(response)) {
+        users = response;
+        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
+      } else if (response) {
+        users = response.users || response.data || [];
+        pagination = response.pagination || { 
+          page: 1, 
+          limit: users.length, 
+          total: users.length, 
+          totalPages: 1 
         };
-      } else {
-        normalizedData = data;
       }
+
+      let normalizedData: UsersResponse = { users, pagination };
 
       // Filtragem no Cliente (Fallback caso o Backend não suporte)
       if (role) {
@@ -61,8 +64,8 @@ export const useUsers = (
   });
 
   const createMutation = useMutation({
-    mutationFn: ({ matricula, password, role }: { matricula: string; password: string; role: 'ADMIN' | 'OPERATOR' }) => 
-      userService.createUser(matricula, password, role),
+    mutationFn: (data: { name: string; matricula: string; password: string; role: 'ADMIN' | 'OPERATOR' }) => 
+      userService.createUser(data.name, data.matricula, data.password, data.role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success('Novo usuário cadastrado com sucesso!');

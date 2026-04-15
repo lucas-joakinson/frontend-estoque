@@ -413,11 +413,11 @@ export const Assets = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-text-primary">{asset.product.name}</span>
-                        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">{asset.product.brand || 'Sem Marca'}</span>
+                        <span className="text-sm font-bold text-text-primary">{asset.product?.name || 'Item Removido'}</span>
+                        <span className="text-[10px] font-mono text-text-secondary uppercase tracking-tighter">{asset.product?.brand || 'Sem Marca'}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase">{asset.product.category.name}</td>
+                    <td className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase">{asset.product?.category?.name || 'Sem Categoria'}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[asset.status].color}`}>
                         {STATUS_LABELS[asset.status].label}

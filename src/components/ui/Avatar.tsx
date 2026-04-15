@@ -25,7 +25,17 @@ export const Avatar = ({ name, avatarUrl, size = 'md', className = '' }: AvatarP
   };
 
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-  const fullAvatarUrl = avatarUrl ? (avatarUrl.startsWith('http') ? avatarUrl : `${baseUrl}${avatarUrl}`) : null;
+  let fullAvatarUrl = null;
+  
+  if (avatarUrl) {
+    if (avatarUrl.startsWith('http')) {
+      fullAvatarUrl = avatarUrl;
+    } else if (avatarUrl.startsWith('/uploads/')) {
+      fullAvatarUrl = `${baseUrl}${avatarUrl}`;
+    } else {
+      fullAvatarUrl = `${baseUrl}/uploads/avatars/${avatarUrl}`;
+    }
+  }
 
   return (
     <div className={`${sizes[size]} rounded-full border border-border-primary flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary-500/20 to-primary-700/20 text-primary-400 font-bold font-mono shrink-0 ${className}`}>

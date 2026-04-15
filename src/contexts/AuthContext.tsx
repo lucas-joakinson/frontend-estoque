@@ -23,16 +23,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(getSafeUser);
   const navigate = useNavigate();
 
-  const login = (token: string, userData: User) => {
+  const login = (token: string, userData: User | any) => {
+    // Se o backend enviar apenas o role e não o objeto user completo
+    const finalUser = userData?.id ? userData : {
+      id: 'session-user',
+      name: 'Usuário',
+      role: userData?.role || 'OPERATOR',
+      matricula: '', // Será preenchido se possível ou ignorado
+    };
+
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(finalUser));
+    setUser(finalUser as User);
+    navigate('/dashboard', { replace: true });
   };
 
   const logout = () => {
-    localStorage.clear();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const updateUser = (userData: Partial<User>) => {

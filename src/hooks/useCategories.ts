@@ -17,21 +17,25 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
   const categoriesQuery = useQuery({
     queryKey: ['categories', page, limit, search],
     queryFn: async () => {
-      const data = await categoryService.getAll(page, limit, search);
+      const response: any = await categoryService.getAll(page, limit, search);
       
-      if (Array.isArray(data)) {
-        return {
-          categories: data,
-          pagination: {
-            page: 1,
-            limit: data.length,
-            total: data.length,
-            totalPages: 1
-          }
-        } as CategoriesResponse;
+      let categories = [];
+      let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+
+      if (Array.isArray(response)) {
+        categories = response;
+        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
+      } else if (response) {
+        categories = response.categories || response.data || [];
+        pagination = response.pagination || { 
+          page: 1, 
+          limit: categories.length, 
+          total: categories.length, 
+          totalPages: 1 
+        };
       }
       
-      return data as CategoriesResponse;
+      return { categories, pagination } as CategoriesResponse;
     },
     placeholderData: (previousData) => previousData,
   });

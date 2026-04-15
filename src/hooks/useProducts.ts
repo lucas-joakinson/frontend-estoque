@@ -17,21 +17,26 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
   const productsQuery = useQuery({
     queryKey: ['products', page, limit, search, sortBy, order],
     queryFn: async () => {
-      const data = await productService.listProducts(page, limit, search, sortBy, order);
+      const response: any = await productService.listProducts(page, limit, search, sortBy, order);
       
-      if (Array.isArray(data)) {
-        return {
-          products: data,
-          pagination: {
-            page: 1,
-            limit: data.length,
-            total: data.length,
-            totalPages: 1
-          }
-        } as ProductsResponse;
+      // Handle the different response structures more robustly
+      let products = [];
+      let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
+
+      if (Array.isArray(response)) {
+        products = response;
+        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
+      } else if (response) {
+        products = response.products || response.data || [];
+        pagination = response.pagination || { 
+          page: 1, 
+          limit: products.length, 
+          total: products.length, 
+          totalPages: 1 
+        };
       }
       
-      return data as ProductsResponse;
+      return { products, pagination } as ProductsResponse;
     },
     placeholderData: (previousData) => previousData,
   });

@@ -10,6 +10,7 @@ import { Assets } from './pages/Assets';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { PublicRoute } from './components/PublicRoute';
 import { AuthProvider } from './contexts/AuthContext';
 
 const queryClient = new QueryClient({
@@ -28,7 +29,9 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <Routes>
-              <Route path="/login" element={<Login />} />
+              <Route element={<PublicRoute />}>
+                <Route path="/login" element={<Login />} />
+              </Route>
               
               <Route element={<ProtectedRoute title="Dashboard" />}>
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -78,4 +81,3 @@ function App() {
 }
 
 export default App;
-

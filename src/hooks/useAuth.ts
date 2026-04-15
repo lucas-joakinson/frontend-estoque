@@ -11,10 +11,13 @@ export const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
-    onSuccess: (data) => {
-      contextLogin(data.token, data.user);
+    onSuccess: (data: any) => {
+      // Se data for { token, role } ou { token, user }
+      const token = data.token;
+      const user = data.user || { role: data.role, matricula: '' };
+      
+      contextLogin(token, user);
       toast.success('Bem-vindo ao sistema!');
-      navigate('/dashboard', { replace: true });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao realizar login');

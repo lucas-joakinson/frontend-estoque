@@ -75,7 +75,7 @@ export const Dashboard = () => {
   const categoryData = useMemo(() => {
     const counts: Record<string, number> = {};
     assets.forEach(asset => {
-      const catName = asset.product.category.name;
+      const catName = asset.product?.category?.name || 'Sem Categoria';
       counts[catName] = (counts[catName] || 0) + 1;
     });
 

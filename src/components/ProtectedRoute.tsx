@@ -11,8 +11,11 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ title, requiredRole }: ProtectedRouteProps) => {
-  const { isAuthenticated, isAdmin } = useAuth();
-
+  const { user } = useAuth();
+  const token = localStorage.getItem('token');
+  const isAuthenticated = !!user && !!token;
+  
+  const isAdmin = user?.role === 'ADMIN';
   const isAuthorized = !requiredRole || (requiredRole === 'ADMIN' ? isAdmin : true);
 
   useEffect(() => {
