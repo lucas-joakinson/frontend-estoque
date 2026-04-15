@@ -17,7 +17,7 @@ export const userService = {
     return response.data;
   },
 
-  async createUser(name: string, matricula: string, password: string, role: 'ADMIN' | 'OPERATOR'): Promise<User> {
+  async createUser(name: string, matricula: string, password: string, role: string): Promise<User> {
     const response = await api.post('/users', { name, matricula, password, role });
     return response.data;
   },
@@ -26,7 +26,7 @@ export const userService = {
     await api.delete(`/users/${id}`);
   },
 
-  async updateUser(id: string, data: { name?: string; password?: string; role?: 'ADMIN' | 'OPERATOR' }): Promise<User> {
+  async updateUser(id: string, data: { name?: string; password?: string; role?: string }): Promise<User> {
     const response = await api.patch(`/users/${id}`, data);
     return response.data;
   },

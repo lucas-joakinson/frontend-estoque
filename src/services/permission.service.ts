@@ -1,5 +1,5 @@
 import api from '../lib/api';
-import type { UserPermissions } from '../types';
+import type { UserPermissions, Role } from '../types';
 
 export const permissionService = {
   async listRoles(): Promise<Role[]> {

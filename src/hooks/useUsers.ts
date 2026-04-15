@@ -63,7 +63,7 @@ export const useUsers = (
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; matricula: string; password: string; role: 'ADMIN' | 'OPERATOR' }) => 
+    mutationFn: (data: { name: string; matricula: string; password: string; role: string }) => 
       userService.createUser(data.name, data.matricula, data.password, data.role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -91,7 +91,7 @@ export const useUsers = (
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { password?: string; role?: 'ADMIN' | 'OPERATOR' } }) => 
+    mutationFn: ({ id, data }: { id: string; data: { name?: string; password?: string; role?: string } }) => 
       userService.updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });

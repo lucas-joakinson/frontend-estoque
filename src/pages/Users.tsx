@@ -82,7 +82,6 @@ export const Users = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-  // States para Permissões e Roles
   const [roles, setRoles] = useState<Role[]>([]);
   const [activeRole, setActiveRole] = useState<string>('OPERATOR');
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
