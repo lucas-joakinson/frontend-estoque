@@ -24,6 +24,11 @@ export const assetService = {
     return response.data;
   },
 
+  async bulkCreateAssets(data: { patrimonio: string; productId: string; status: AssetStatus; location: string; responsible?: string | null }[]): Promise<{ count: number }> {
+    const response = await api.post('/assets/bulk', data);
+    return response.data;
+  },
+
   async updateAsset(id: string, data: { status: AssetStatus; location: string; responsible?: string | null; observation?: string }): Promise<Asset> {
     const response = await api.patch(`/assets/${id}`, data);
     return response.data;

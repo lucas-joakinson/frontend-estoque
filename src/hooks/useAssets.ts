@@ -87,6 +87,18 @@ export const useAssets = (
     },
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: (data: { patrimonio: string; productId: string; status: AssetStatus; location: string; responsible?: string | null }[]) => 
+      assetService.bulkCreateAssets(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast.success(`${response.count} ativos registrados com sucesso!`);
+    },
+    onError: (error: { response?: { data?: { message?: string } } }) => {
+      toast.error(error.response?.data?.message || 'Erro ao registrar ativos em lote');
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: { status: AssetStatus; location: string; responsible?: string | null; notes?: string } }) => 
       assetService.updateAsset(id, data),
@@ -115,6 +127,8 @@ export const useAssets = (
     isLoading: assetsQuery.isLoading,
     createAsset: createMutation.mutate,
     isCreating: createMutation.isPending,
+    bulkCreateAsset: bulkCreateMutation.mutate,
+    isBulkCreating: bulkCreateMutation.isPending,
     updateAsset: updateMutation.mutate,
     isUpdating: updateMutation.isPending,
     deleteAsset: deleteMutation.mutate,

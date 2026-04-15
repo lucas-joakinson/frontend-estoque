@@ -60,6 +60,7 @@ export const Inventory = () => {
   const [isExporting, setIsExporting] = useState(false);
   
   const [isAssetCreateModalOpen, setIsAssetCreateModalOpen] = useState(false);
+  const [isAssetBulkModalOpen, setIsAssetBulkModalOpen] = useState(false);
   const [isAssetEditModalOpen, setIsAssetEditModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [isAssetHistoryModalOpen, setIsAssetHistoryModalOpen] = useState(false);
@@ -72,7 +73,7 @@ export const Inventory = () => {
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [bulkData, setBulkData] = useState({ status: '' as AssetStatus | '', location: '', notes: '' });
 
-  const { assetsData, isLoading: isLoadingAssets, createAsset, isCreating: isCreatingAsset, updateAsset, isUpdating: isUpdatingAsset, deleteAsset } = useAssets(
+  const { assetsData, isLoading: isLoadingAssets, createAsset, isCreating: isCreatingAsset, updateAsset, isUpdating: isUpdatingAsset, deleteAsset, bulkCreateAsset, isBulkCreating } = useAssets(
     assetPage, 
     assetLimit, 
     debouncedAssetSearch, 
@@ -91,6 +92,59 @@ export const Inventory = () => {
     resolver: zodResolver(createAssetSchema),
     defaultValues: { status: 'DISPONIVEL' },
   });
+
+  const [bulkForm, setBulkForm] = useState({
+    productId: '',
+    patrimoniosText: '',
+    status: 'DISPONIVEL' as AssetStatus,
+    location: '',
+    responsible: '',
+  });
+
+  const onAssetBulkSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bulkForm.productId || !bulkForm.patrimoniosText.trim()) {
+      toast.error('Preencha o modelo e os números de patrimônio');
+      return;
+    }
+
+    // Processa o texto: separa por linha ou vírgula, remove espaços e linhas vazias
+    const patrimonioList = bulkForm.patrimoniosText
+      .split(/[\n,]/)
+      .map(p => p.trim())
+      .filter(p => p.length > 0);
+
+    if (patrimonioList.length === 0) {
+      toast.error('Insira ao menos um número de patrimônio válido');
+      return;
+    }
+
+    if (patrimonioList.length > 100) {
+      toast.error('O limite máximo é de 100 ativos por vez');
+      return;
+    }
+
+    const assets = patrimonioList.map(p => ({
+      patrimonio: p,
+      productId: bulkForm.productId,
+      status: bulkForm.status,
+      location: bulkForm.location,
+      responsible: bulkForm.responsible || null,
+    }));
+
+    bulkCreateAsset(assets, {
+      onSuccess: () => {
+        setIsAssetBulkModalOpen(false);
+        setBulkForm({
+          productId: '',
+          patrimoniosText: '',
+          status: 'DISPONIVEL',
+          location: '',
+          responsible: '',
+        });
+      }
+    });
+  };
 
   const {
     register: registerAssetEdit,
@@ -371,9 +425,15 @@ export const Inventory = () => {
               </button>
               <button 
                 onClick={() => { resetAssetCreate(); setIsAssetCreateModalOpen(true); }}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
               >
                 <Plus size={18} /> Novo Ativo
+              </button>
+              <button 
+                onClick={() => setIsAssetBulkModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+              >
+                <PackagePlus size={18} /> Cadastro em Lote
               </button>
             </div>
           </div>
@@ -746,6 +806,76 @@ export const Inventory = () => {
           </div>
           <button type="submit" disabled={isCreatingAsset} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12">
             {isCreatingAsset ? <Spinner /> : 'Registrar Ativo'}
+          </button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isAssetBulkModalOpen} onClose={() => !isBulkCreating && setIsAssetBulkModalOpen(false)} title="Cadastro de Ativos em Lote">
+        <form onSubmit={onAssetBulkSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Modelo do Item</label>
+            <select 
+              required
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+              value={bulkForm.productId}
+              onChange={(e) => setBulkForm({ ...bulkForm, productId: e.target.value })}
+            >
+              <option value="">Selecione...</option>
+              {productsData?.products.map((p: Product) => (
+                <option key={p.id} value={p.id}>{p.name} {p.brand ? `(${p.brand})` : ''}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Números de Patrimônio (Um por linha ou vírgula)</label>
+            <textarea 
+              required
+              placeholder="Ex:&#10;123129&#10;12412&#10;1234"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[120px] resize-none"
+              value={bulkForm.patrimoniosText}
+              onChange={(e) => setBulkForm({ ...bulkForm, patrimoniosText: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status Inicial</label>
+              <select 
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none"
+                value={bulkForm.status}
+                onChange={(e) => setBulkForm({ ...bulkForm, status: e.target.value as AssetStatus })}
+              >
+                {Object.entries(STATUS_LABELS).map(([val, { label }]) => ( <option key={val} value={val}>{label}</option> ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Localização</label>
+              <input 
+                type="text" 
+                required
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none"
+                value={bulkForm.location}
+                onChange={(e) => setBulkForm({ ...bulkForm, location: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Responsável (Opcional)</label>
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none"
+              value={bulkForm.responsible}
+              onChange={(e) => setBulkForm({ ...bulkForm, responsible: e.target.value })}
+            />
+          </div>
+          <div className="p-4 rounded-xl bg-primary-500/5 border border-primary-500/20">
+            <p className="text-[10px] font-mono text-primary-400 uppercase leading-relaxed">
+              Dica: Você pode copiar uma coluna do Excel e colar diretamente na caixa de patrimônios.
+            </p>
+          </div>
+          <button type="submit" disabled={isBulkCreating} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12">
+            {isBulkCreating ? <Spinner /> : 'Cadastrar Ativos em Lote'}
           </button>
         </form>
       </Modal>
