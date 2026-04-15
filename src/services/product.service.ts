@@ -2,9 +2,9 @@ import api from '../lib/api';
 import type { Product, ProductsResponse } from '../types';
 
 export const productService = {
-  async listProducts(page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc'): Promise<ProductsResponse> {
+  async listProducts(page = 1, limit = 10, search = '', categoryId = '', sortBy = 'createdAt', order = 'desc'): Promise<ProductsResponse> {
     const response = await api.get('/products', {
-      params: { page, limit, search, sortBy, order },
+      params: { page, limit, search, categoryId, sortBy, order },
     });
     return response.data;
   },

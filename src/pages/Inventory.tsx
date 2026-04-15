@@ -208,13 +208,24 @@ export const Inventory = () => {
 
   // --- LOGIC: PRODUCTS (ITENS/MODELOS) ---
   const [productPage, setProductPage] = useState(1);
+  const [productLimit, setProductLimit] = useState(10);
   const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string>('');
+  const [productSortBy, setProductSortBy] = useState<'name' | 'createdAt'>('createdAt');
+  const [productOrder, setProductOrder] = useState<'asc' | 'desc'>('desc');
   const debouncedProductSearch = useDebounce(productSearch, 500);
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDeleteConfirmOpen, setIsProductDeleteConfirmOpen] = useState(false);
 
-  const { productsData, isLoading: isLoadingProducts, deleteProduct, createProduct, isCreating: isCreatingProduct } = useProducts(productPage, 10, debouncedProductSearch, 'createdAt', 'desc');
+  const { productsData, isLoading: isLoadingProducts, deleteProduct, createProduct, isCreating: isCreatingProduct } = useProducts(
+    productPage, 
+    productLimit, 
+    debouncedProductSearch, 
+    productCategoryFilter,
+    productSortBy, 
+    productOrder
+  );
 
   const {
     register: registerProduct,
@@ -241,13 +252,22 @@ export const Inventory = () => {
 
   // --- LOGIC: CATEGORIES ---
   const [catPage, setCatPage] = useState(1);
+  const [catLimit, setCatLimit] = useState(10);
   const [catSearch, setCatSearch] = useState('');
+  const [catSortBy, setCatSortBy] = useState<'name' | 'createdAt'>('name');
+  const [catOrder, setCatOrder] = useState<'asc' | 'desc'>('asc');
   const debouncedCatSearch = useDebounce(catSearch, 500);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
   const [isCatDeleteConfirmOpen, setIsCatDeleteConfirmOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
 
-  const { categoriesData, isLoading: isLoadingCats, createCategory, updateCategory, deleteCategory } = useCategories(catPage, 10, debouncedCatSearch);
+  const { categoriesData, isLoading: isLoadingCats, createCategory, updateCategory, deleteCategory } = useCategories(
+    catPage, 
+    catLimit, 
+    debouncedCatSearch,
+    catSortBy,
+    catOrder
+  );
 
   const {
     register: registerCat,
@@ -490,6 +510,45 @@ export const Inventory = () => {
             </button>
           </div>
 
+          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <SlidersHorizontal size={16} />
+                  <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
+                </div>
+                <div className="flex gap-2">
+                  {[10, 20, 50].map((num) => (
+                    <button key={num} onClick={() => { setProductLimit(num); setProductPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${productLimit === num ? 'bg-primary-500 text-white shadow-glow-purple' : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'}`}>{num}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Filter size={14} className="text-primary-400" />
+                  <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
+                </div>
+                <select value={productCategoryFilter} onChange={(e) => { setProductCategoryFilter(e.target.value); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
+                  <option value="">Categoria</option>
+                  {categoriesData?.categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <select value={productSortBy} onChange={(e) => { setProductSortBy(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
+                  <option value="name">Nome</option>
+                  <option value="createdAt">Data</option>
+                </select>
+                <select value={productOrder} onChange={(e) => { setProductOrder(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
+                  <option value="asc">Crescente</option>
+                  <option value="desc">Decrescente</option>
+                </select>
+              </div>
+              {(productSearch || productCategoryFilter) && (
+                <button onClick={() => { setProductSearch(''); setProductCategoryFilter(''); setProductPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar Filtros</button>
+              )}
+            </div>
+          </div>
+
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -562,6 +621,35 @@ export const Inventory = () => {
                 <Plus size={18} /> Nova Categoria
               </button>
             )}
+          </div>
+
+          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <SlidersHorizontal size={16} />
+                  <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
+                </div>
+                <div className="flex gap-2">
+                  {[10, 20, 50].map((num) => (
+                    <button key={num} onClick={() => { setCatLimit(num); setCatPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${catLimit === num ? 'bg-primary-500 text-white shadow-glow-purple' : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'}`}>{num}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Filter size={14} className="text-primary-400" />
+                  <span className="text-xs font-mono uppercase tracking-widest">Ordem:</span>
+                </div>
+                <select value={catOrder} onChange={(e) => { setCatOrder(e.target.value as any); setCatPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
+                  <option value="asc">A-Z (Crescente)</option>
+                  <option value="desc">Z-A (Decrescente)</option>
+                </select>
+              </div>
+              {catSearch && (
+                <button onClick={() => { setCatSearch(''); setCatPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar</button>
+              )}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">

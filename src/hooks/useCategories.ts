@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from '../services/category.service';
 import { toast } from 'sonner';
-import type { CategoriesResponse } from '../types';
+import type { CategoriesResponse, Category } from '../types';
 
 interface ApiError {
   response?: {
@@ -11,20 +11,19 @@ interface ApiError {
   };
 }
 
-export const useCategories = (page = 1, limit = 10, search = '') => {
+export const useCategories = (page = 1, limit = 10, search = '', sortBy = 'name', order = 'asc') => {
   const queryClient = useQueryClient();
 
   const categoriesQuery = useQuery({
-    queryKey: ['categories', page, limit, search],
+    queryKey: ['categories', page, limit, search, sortBy, order],
     queryFn: async () => {
-      const response: any = await categoryService.getAll(page, limit, search);
+      const response: any = await categoryService.getAll(page, limit, search, sortBy, order);
       
-      let categories = [];
+      let categories: Category[] = [];
       let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
       if (Array.isArray(response)) {
         categories = response;
-        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
       } else if (response) {
         categories = response.categories || response.data || [];
         pagination = response.pagination || { 
@@ -34,6 +33,20 @@ export const useCategories = (page = 1, limit = 10, search = '') => {
           totalPages: 1 
         };
       }
+
+      // FALLBACK: Client-side filtering
+      if (search) {
+        const s = search.toLowerCase();
+        categories = categories.filter(c => c.name.toLowerCase().includes(s));
+      }
+
+      // FALLBACK: Client-side sorting
+      categories.sort((a, b) => {
+        const valA = (a[sortBy as keyof Category] || '').toString().toLowerCase();
+        const valB = (b[sortBy as keyof Category] || '').toString().toLowerCase();
+        if (order === 'asc') return valA.localeCompare(valB);
+        return valB.localeCompare(valA);
+      });
       
       return { categories, pagination } as CategoriesResponse;
     },

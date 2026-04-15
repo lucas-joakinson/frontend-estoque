@@ -37,7 +37,7 @@ export const useAssets = (
 
       let normalizedData: AssetsResponse = { assets, pagination };
 
-      if (status || categoryId) {
+      if (status || categoryId || search) {
         let filteredAssets = [...normalizedData.assets];
         
         if (status) {
@@ -45,7 +45,18 @@ export const useAssets = (
         }
         
         if (categoryId) {
-          filteredAssets = filteredAssets.filter(a => a && a.product && a.product.categoryId === categoryId);
+          filteredAssets = filteredAssets.filter(a => 
+            a && a.product && (a.product.categoryId === categoryId || a.product.category?.id === categoryId)
+          );
+        }
+
+        if (search) {
+          const s = search.toLowerCase();
+          filteredAssets = filteredAssets.filter(a => 
+            a.patrimonio.toLowerCase().includes(s) || 
+            a.product?.name.toLowerCase().includes(s) ||
+            a.product?.brand?.toLowerCase().includes(s)
+          );
         }
 
         return {
@@ -54,7 +65,7 @@ export const useAssets = (
           pagination: {
             ...normalizedData.pagination,
             total: filteredAssets.length,
-            totalPages: Math.ceil(filteredAssets.length / limit)
+            totalPages: Math.ceil(filteredAssets.length / (limit || 10))
           }
         };
       }

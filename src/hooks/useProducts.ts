@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '../services/product.service';
 import { toast } from 'sonner';
-import type { ProductsResponse } from '../types';
+import type { ProductsResponse, Product } from '../types';
 
 interface ApiError {
   response?: {
@@ -11,20 +11,19 @@ interface ApiError {
   };
 }
 
-export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'createdAt', order = 'desc') => {
+export const useProducts = (page = 1, limit = 10, search = '', categoryId = '', sortBy = 'createdAt', order = 'desc') => {
   const queryClient = useQueryClient();
 
   const productsQuery = useQuery({
-    queryKey: ['products', page, limit, search, sortBy, order],
+    queryKey: ['products', page, limit, search, categoryId, sortBy, order],
     queryFn: async () => {
-      const response: any = await productService.listProducts(page, limit, search, sortBy, order);
+      const response: any = await productService.listProducts(page, limit, search, categoryId, sortBy, order);
       
-      let products = [];
+      let products: Product[] = [];
       let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
       if (Array.isArray(response)) {
         products = response;
-        pagination = { page: 1, limit: response.length, total: response.length, totalPages: 1 };
       } else if (response) {
         products = response.products || response.data || [];
         pagination = response.pagination || { 
@@ -34,6 +33,27 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
           totalPages: 1 
         };
       }
+
+      // FALLBACK: Client-side filtering
+      if (categoryId) {
+        products = products.filter(p => p.categoryId === categoryId || p.category?.id === categoryId);
+      }
+      
+      if (search) {
+        const s = search.toLowerCase();
+        products = products.filter(p => 
+          p.name.toLowerCase().includes(s) || 
+          p.brand?.toLowerCase().includes(s)
+        );
+      }
+
+      // FALLBACK: Client-side sorting
+      products.sort((a, b) => {
+        const valA = (a[sortBy as keyof Product] || '').toString().toLowerCase();
+        const valB = (b[sortBy as keyof Product] || '').toString().toLowerCase();
+        if (order === 'asc') return valA.localeCompare(valB);
+        return valB.localeCompare(valA);
+      });
       
       return { products, pagination } as ProductsResponse;
     },
