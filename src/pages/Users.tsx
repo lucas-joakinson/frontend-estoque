@@ -594,8 +594,8 @@ export const Users = () => {
                       </p>
                     </div>
 
-                    <div className={`w-10 h-5 rounded-full relative transition-all duration-300 ${permissions?.[perm.id] ? 'bg-primary-500' : 'bg-border-primary'}`}>
-                      <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-300 ${permissions?.[perm.id] ? 'left-5.5 shadow-sm' : 'left-0.5'}`} />
+                    <div className={`w-10 h-6 rounded-full relative transition-all duration-300 shrink-0 ${permissions?.[perm.id] ? 'bg-primary-500 shadow-glow-purple/20' : 'bg-border-primary'}`}>
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 shadow-sm ${permissions?.[perm.id] ? 'translate-x-5' : 'translate-x-1'}`} />
                     </div>
                   </div>
                 ))}
