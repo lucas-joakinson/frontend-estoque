@@ -31,6 +31,7 @@ export interface Asset {
   product: Product;
   status: AssetStatus;
   location: string;
+  responsible?: string | null;
   observation?: string;
   createdAt: string;
   updatedAt: string;

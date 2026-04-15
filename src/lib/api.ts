@@ -15,12 +15,9 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
-    // Se o backend retornar { success: true, data: ... } ou apenas { data: ... }
-    // nós extraímos o conteúdo de data para facilitar o consumo nos hooks/services
     if (response.data && typeof response.data === 'object') {
       const { data, success, products, assets, categories, users, pagination } = response.data;
       
-      // Se houver um campo 'data' e ele for o único ou principal conteúdo
       if (data !== undefined && (Object.keys(response.data).length <= 2)) {
         return { ...response, data: data };
       }

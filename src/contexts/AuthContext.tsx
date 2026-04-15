@@ -24,12 +24,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   const login = (token: string, userData: User | any) => {
-    // Se o backend enviar apenas o role e não o objeto user completo
     const finalUser = userData?.id ? userData : {
       id: 'session-user',
       name: 'Usuário',
       role: userData?.role || 'OPERATOR',
-      matricula: '', // Será preenchido se possível ou ignorado
+      matricula: '',
     };
 
     localStorage.setItem('token', token);

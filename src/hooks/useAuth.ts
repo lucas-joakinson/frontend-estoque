@@ -12,7 +12,6 @@ export const useAuth = () => {
   const loginMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
     onSuccess: (data: any) => {
-      // Se data for { token, role } ou { token, user }
       const token = data.token;
       const user = data.user || { role: data.role, matricula: '' };
       

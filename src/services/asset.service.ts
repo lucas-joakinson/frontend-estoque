@@ -19,12 +19,12 @@ export const assetService = {
     return response.data;
   },
 
-  async createAsset(data: { patrimonio: string; productId: string; status: AssetStatus; location: string }): Promise<Asset> {
+  async createAsset(data: { patrimonio: string; productId: string; status: AssetStatus; location: string; responsible?: string | null }): Promise<Asset> {
     const response = await api.post('/assets', data);
     return response.data;
   },
 
-  async updateAsset(id: string, data: { status: AssetStatus; location: string; observation?: string }): Promise<Asset> {
+  async updateAsset(id: string, data: { status: AssetStatus; location: string; responsible?: string | null; observation?: string }): Promise<Asset> {
     const response = await api.patch(`/assets/${id}`, data);
     return response.data;
   },
@@ -50,7 +50,7 @@ export const assetService = {
         throw new Error('Formato de dados inválido para exportação');
       }
 
-      const headers = ['Patrimonio', 'Produto', 'Marca', 'Categoria', 'Status', 'Localizacao', 'Data Cadastro'];
+      const headers = ['Patrimonio', 'Produto', 'Marca', 'Categoria', 'Status', 'Localizacao', 'Responsavel', 'Data Cadastro'];
       const rows = assets.map(asset => [
         asset.patrimonio,
         asset.product.name,
@@ -58,6 +58,7 @@ export const assetService = {
         asset.product.category.name,
         asset.status,
         asset.location,
+        asset.responsible || 'Não informado',
         new Date(asset.createdAt).toLocaleDateString()
       ]);
 

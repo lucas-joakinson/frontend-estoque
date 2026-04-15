@@ -44,7 +44,6 @@ export const useUsers = (
 
       let normalizedData: UsersResponse = { users, pagination };
 
-      // Filtragem no Cliente (Fallback caso o Backend não suporte)
       if (role) {
         const filteredUsers = normalizedData.users.filter((u: User) => u.role === role);
         return {

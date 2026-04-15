@@ -88,6 +88,7 @@ export const Assets = () => {
       resetEdit({
         status: selectedAsset.status,
         location: selectedAsset.location,
+        responsible: selectedAsset.responsible || '',
         observation: selectedAsset.observation || '',
       });
     }
@@ -378,6 +379,7 @@ export const Assets = () => {
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item / Marca</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Categoria</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Status</th>
+                <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Responsável</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Localização</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-right">Ações</th>
               </tr>
@@ -422,6 +424,12 @@ export const Assets = () => {
                       <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[asset.status].color}`}>
                         {STATUS_LABELS[asset.status].label}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-xs font-mono text-text-secondary">
+                        <User size={12} className="text-primary-500/50" />
+                        {asset.responsible || '-'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 flex items-center gap-2 text-xs font-mono text-text-secondary">
                       <MapPin size={12} className="text-primary-500/50" />
@@ -549,6 +557,15 @@ export const Assets = () => {
               {createErrors.location && <span className="text-[10px] text-red-500 font-mono">{createErrors.location.message}</span>}
             </div>
           </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Responsável (Opcional)</label>
+            <input
+              type="text"
+              placeholder="Ex: João Silva ou Setor de TI"
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+              {...registerCreate('responsible')}
+            />
+          </div>
           <button 
             type="submit" 
             disabled={isCreating}
@@ -588,6 +605,16 @@ export const Assets = () => {
               />
               {editErrors.location && <span className="text-[10px] text-red-500 font-mono">{editErrors.location.message}</span>}
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Responsável (Opcional)</label>
+            <input
+              type="text"
+              placeholder="Ex: João Silva ou Setor de TI"
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.responsible ? 'border-red-500' : 'border-border-primary'}`}
+              {...registerEdit('responsible')}
+            />
+            {editErrors.responsible && <span className="text-[10px] text-red-500 font-mono">{editErrors.responsible.message}</span>}
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações para o Histórico</label>

@@ -19,7 +19,6 @@ export const useProducts = (page = 1, limit = 10, search = '', sortBy = 'created
     queryFn: async () => {
       const response: any = await productService.listProducts(page, limit, search, sortBy, order);
       
-      // Handle the different response structures more robustly
       let products = [];
       let pagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
 
