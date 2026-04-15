@@ -34,6 +34,10 @@ export const useProducts = (page = 1, limit = 10, search = '', categoryId = '', 
         };
       }
 
+      if (pagination.total === 0 && products.length > 0) {
+        pagination.total = products.length;
+      }
+
       // FALLBACK: Client-side filtering
       if (categoryId) {
         products = products.filter(p => p.categoryId === categoryId || p.category?.id === categoryId);

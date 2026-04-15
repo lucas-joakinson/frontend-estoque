@@ -34,6 +34,10 @@ export const useCategories = (page = 1, limit = 10, search = '', sortBy = 'name'
         };
       }
 
+      if (pagination.total === 0 && categories.length > 0) {
+        pagination.total = categories.length;
+      }
+
       // FALLBACK: Client-side filtering
       if (search) {
         const s = search.toLowerCase();

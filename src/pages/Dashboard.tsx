@@ -44,19 +44,19 @@ export const Dashboard = () => {
   const stats = useMemo(() => [
     {
       label: 'Modelos de Itens',
-      value: productsData?.pagination.total || 0,
+      value: productsData?.pagination?.total ?? productsData?.products?.length ?? 0,
       icon: Package,
       loading: loadingProducts,
     },
     {
       label: 'Total de Ativos',
-      value: assetsData?.pagination.total || 0,
+      value: assetsData?.pagination?.total ?? assetsData?.assets?.length ?? 0,
       icon: ClipboardList,
       loading: loadingAssets,
     },
     {
       label: 'Categorias',
-      value: categoriesData?.pagination.total || 0,
+      value: categoriesData?.pagination?.total ?? categoriesData?.categories?.length ?? 0,
       icon: Tag,
       loading: loadingCategories,
     },
