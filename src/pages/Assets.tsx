@@ -114,7 +114,7 @@ export const Assets = () => {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      await assetService.exportAssets();
+      await assetService.exportAssets(search, statusFilter, categoryFilter);
       toast.success('Relatório gerado com sucesso!');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro ao exportar dados';

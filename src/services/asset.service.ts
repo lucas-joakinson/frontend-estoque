@@ -38,24 +38,36 @@ export const assetService = {
     return response.data;
   },
 
-  async exportAssets() {
+  async exportAssets(search = '', status?: string, categoryId?: string) {
     try {
-      const response = await api.get('/assets', {
-        params: { limit: 10000 }
-      });
+      const LIMIT_PER_REQUEST = 100;
+      let allAssets: Asset[] = [];
       
-      const assets: Asset[] = response.data.assets || response.data;
+      // Primeira requisição para saber o total de páginas
+      const firstResponse = await this.listAssets(1, LIMIT_PER_REQUEST, search, status, categoryId);
+      allAssets = [...firstResponse.assets];
       
-      if (!Array.isArray(assets)) {
-        throw new Error('Formato de dados inválido para exportação');
+      const totalPages = firstResponse.pagination.totalPages;
+
+      // Busca as páginas restantes, se houver
+      if (totalPages > 1) {
+        const remainingPagesPromises = [];
+        for (let p = 2; p <= totalPages; p++) {
+          remainingPagesPromises.push(this.listAssets(p, LIMIT_PER_REQUEST, search, status, categoryId));
+        }
+        
+        const remainingResponses = await Promise.all(remainingPagesPromises);
+        remainingResponses.forEach(response => {
+          allAssets = [...allAssets, ...response.assets];
+        });
       }
 
       const headers = ['Patrimonio', 'Produto', 'Marca', 'Categoria', 'Status', 'Localizacao', 'Responsavel', 'Data Cadastro'];
-      const rows = assets.map(asset => [
+      const rows = allAssets.map(asset => [
         asset.patrimonio,
-        asset.product.name,
-        asset.product.brand || '',
-        asset.product.category.name,
+        asset.product?.name || 'Item Removido',
+        asset.product?.brand || '',
+        asset.product?.category?.name || 'Sem Categoria',
         asset.status,
         asset.location,
         asset.responsible || 'Não informado',
