@@ -2,11 +2,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from '../components/ui/Spinner';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { loginSchema, type LoginInput } from '../schemas/auth.schema';
 
 export const Login = () => {
-  const { login, isLoggingIn, isAuthenticated } = useAuth();
+  const { login, isLoggingIn } = useAuth();
   const navigate = useNavigate();
 
   const {

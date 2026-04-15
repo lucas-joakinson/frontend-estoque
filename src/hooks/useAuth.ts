@@ -7,7 +7,7 @@ import type { LoginInput } from '../schemas/auth.schema';
 
 export const useAuth = () => {
   const navigate = useNavigate();
-  const { login: contextLogin, logout: contextLogout, isAdmin, isAuthenticated, user } = useAuthContext();
+  const { login: contextLogin, logout: contextLogout, isAdmin, isAuthenticated, user, isLoading } = useAuthContext();
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginInput) => authService.login(data.matricula, data.password),
@@ -42,6 +42,7 @@ export const useAuth = () => {
     logout: contextLogout,
     isAdmin,
     isAuthenticated,
-    user
+    user,
+    isLoading
   };
 };

@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useProfile } from '../hooks/useProfile';
 import { useAuthContext } from '../contexts/AuthContext';
 import { changePasswordSchema, type ChangePasswordInput } from '../schemas/profile.schema';
-import { Shield, Key, Eye, EyeOff, Camera, User as UserIcon, Check, Edit2, X } from 'lucide-react';
+import { Shield, Key, Eye, EyeOff, Camera, Check, Edit2, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { Spinner } from '../components/ui/Spinner';
 import { Avatar } from '../components/ui/Avatar';

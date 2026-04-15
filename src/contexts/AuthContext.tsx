@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { userService } from '../services/user.service';
 import type { User } from '../types';
 
 interface AuthContextType {
@@ -7,8 +8,10 @@ interface AuthContextType {
   login: (token: string, userData: User) => void;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  refreshProfile: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,35 +24,73 @@ const getSafeUser = (): User | null => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(getSafeUser);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  const login = (token: string, userData: User | any) => {
-    const finalUser = userData?.id ? userData : {
-      id: 'session-user',
-      name: 'Usuário',
-      role: userData?.role || 'OPERATOR',
-      matricula: '',
-    };
+  const refreshProfile = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsLoading(false);
+      return;
+    }
 
+    try {
+      const userData = await userService.getProfile();
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error);
+      if ((error as any).response?.status === 401) {
+        logout();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const login = (token: string, userData: User | any) => {
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(finalUser));
-    setUser(finalUser as User);
+    
+    if (userData?.id && userData?.name) {
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData as User);
+    } else {
+      const placeholder = { ...userData, name: 'Carregando...' };
+      setUser(placeholder as User);
+      refreshProfile();
+    }
+    
     navigate('/dashboard', { replace: true });
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
     navigate('/login', { replace: true });
-  };
+  }, [navigate]);
 
-  const updateUser = (userData: Partial<User>) => {
-    if (!user) return;
-    const updated = { ...user, ...userData };
-    localStorage.setItem('user', JSON.stringify(updated));
-    setUser(updated);
-  };
+  const updateUser = useCallback((userData: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, ...userData };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        await refreshProfile();
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
+  }, [refreshProfile]);
 
   useEffect(() => {
     const handleStorage = () => setUser(getSafeUser());
@@ -62,9 +103,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     login,
     logout,
     updateUser,
+    refreshProfile,
     isAuthenticated: !!user && !!localStorage.getItem('token'),
-    isAdmin: user?.role === 'ADMIN'
-  }), [user]);
+    isAdmin: user?.role === 'ADMIN',
+    isLoading
+  }), [user, logout, updateUser, refreshProfile, isLoading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -31,7 +31,11 @@ export const userService = {
     return response.data;
   },
 
-  // Perfil Self-Service
+  async getProfile(): Promise<User> {
+    const response = await api.get('/users/profile');
+    return response.data;
+  },
+
   async updateProfile(name: string): Promise<User> {
     const response = await api.patch('/users/profile', { name });
     return response.data;
