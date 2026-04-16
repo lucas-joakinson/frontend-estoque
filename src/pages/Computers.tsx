@@ -5,7 +5,7 @@ import {
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
   History, User, ClipboardList,
-  PackagePlus, Download, MapPin
+  PackagePlus, Download, MapPin, X, Settings2
 } from 'lucide-react';
 
 // Hooks
@@ -14,6 +14,7 @@ import { useDebounce } from '../hooks/useDebounce';
 
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 // UI Components
 import { Skeleton } from '../components/ui/Skeleton';
@@ -37,6 +38,7 @@ const STATUS_LABELS: Record<ComputerStatus, { label: string; color: string }> = 
 };
 
 export const Computers = () => {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -51,6 +53,11 @@ export const Computers = () => {
   const [computerForHistory, setComputerForHistory] = useState<Computer | null>(null);
 
   const [isExporting, setIsExporting] = useState(false);
+
+  // Seleção em massa
+  const [selectedComputerIds, setSelectedComputerIds] = useState<string[]>([]);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
   // Estados para importação em lote
   const [parsedComputers, setParsedComputers] = useState<ComputerInput[]>([]);
@@ -83,6 +90,34 @@ export const Computers = () => {
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
+    setSelectedComputerIds([]);
+  };
+
+  const toggleSelectAllComputers = () => {
+    if (selectedComputerIds.length === (computersData?.computers.length || 0)) {
+      setSelectedComputerIds([]);
+    } else {
+      setSelectedComputerIds(computersData?.computers.map(c => c.id) || []);
+    }
+  };
+
+  const toggleSelectOneComputer = (id: string) => {
+    setSelectedComputerIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedComputerIds.length === 0) return;
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Excluindo ${selectedComputerIds.length} computadores...`);
+    try {
+      for (const id of selectedComputerIds) await computerService.deleteComputer(id);
+      queryClient.invalidateQueries({ queryKey: ['computers'] });
+      toast.success('Computadores removidos com sucesso!', { id: toastId });
+      setSelectedComputerIds([]);
+      setIsBulkDeleteConfirmOpen(false);
+    } catch (error) {
+      toast.error('Erro ao excluir computadores.', { id: toastId });
+    } finally { setIsProcessingBulk(false); }
   };
 
   const handleOpenModal = (computer?: Computer) => {
@@ -283,7 +318,7 @@ export const Computers = () => {
         </div>
 
         <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm w-full md:w-auto">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-4 border-r border-border-primary pr-6">
               <div className="flex items-center gap-2 text-text-secondary">
                 <SlidersHorizontal size={16} />
@@ -308,7 +343,7 @@ export const Computers = () => {
               </div>
               <select 
                 value={statusFilter} 
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} 
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); setSelectedComputerIds([]); }} 
                 className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
               >
                 <option value="">Todos os status</option>
@@ -317,6 +352,14 @@ export const Computers = () => {
                 ))}
               </select>
             </div>
+            {(search || statusFilter) && (
+              <button 
+                onClick={() => { setSearch(''); setStatusFilter(''); setPage(1); setSelectedComputerIds([]); }} 
+                className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
+              >
+                Limpar Filtros
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -327,6 +370,14 @@ export const Computers = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
+                <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                    checked={!!(computersData?.computers && computersData.computers.length > 0 && selectedComputerIds.length === computersData.computers.length)} 
+                    onChange={toggleSelectAllComputers} 
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Patrimônio</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Hostname</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Status</th>
@@ -339,6 +390,7 @@ export const Computers = () => {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
                     <td className="px-6 py-4 text-center"><Skeleton className="h-6 w-24 mx-auto" /></td>
@@ -349,7 +401,15 @@ export const Computers = () => {
                 ))
               ) : computersData?.computers && computersData.computers.length > 0 ? (
                 computersData.computers.map((comp) => (
-                  <tr key={comp.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0">
+                  <tr key={comp.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedComputerIds.includes(comp.id) ? 'bg-primary-500/5' : ''}`}>
+                    <td className="px-6 py-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                        checked={selectedComputerIds.includes(comp.id)} 
+                        onChange={() => toggleSelectOneComputer(comp.id)} 
+                      />
+                    </td>
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">
                       <span className="px-2 py-1 rounded bg-hover-bg border border-border-primary font-mono text-xs">
                         {comp.patrimonio}
@@ -391,7 +451,7 @@ export const Computers = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
+                  <td colSpan={7} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
                     Nenhum computador encontrado.
                   </td>
                 </tr>
@@ -410,18 +470,41 @@ export const Computers = () => {
           <div className="flex gap-2">
             <button 
               disabled={page === 1} 
-              onClick={() => setPage(p => p - 1)} 
+              onClick={() => { setPage(p => p - 1); setSelectedComputerIds([]); }} 
               className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"
             >
               <ChevronLeft size={20} />
             </button>
             <button 
               disabled={page >= computersData.pagination.totalPages} 
-              onClick={() => setPage(p => p + 1)} 
+              onClick={() => { setPage(p => p + 1); setSelectedComputerIds([]); }} 
               className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"
             >
               <ChevronRight size={20} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ações em Massa */}
+      {selectedComputerIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
+            <div className="flex items-center gap-2 border-r border-primary-400 pr-6">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedComputerIds.length}</div>
+              <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsBulkDeleteConfirmOpen(true)} 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Trash2 size={16} /> Excluir
+              </button>
+              <button onClick={() => setSelectedComputerIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -653,6 +736,8 @@ export const Computers = () => {
         title="Excluir Computador" 
         description={`Tem certeza que deseja remover o computador de patrimônio ${selectedComputer?.patrimonio}?`} 
       />
+      <ConfirmDialog isOpen={isBulkDeleteConfirmOpen} onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)} onConfirm={handleBulkDelete} title={`Excluir ${selectedComputerIds.length} Computadores`} description="Remover permanentemente os computadores selecionados?" />
     </div>
   );
 };
+

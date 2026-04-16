@@ -5,7 +5,7 @@ import {
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
   History, User, ClipboardList,
-  PackagePlus, Download
+  PackagePlus, Download, X, Settings2
 } from 'lucide-react';
 
 // Hooks
@@ -14,6 +14,7 @@ import { useDebounce } from '../hooks/useDebounce';
 
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 // UI Components
 import { Skeleton } from '../components/ui/Skeleton';
@@ -36,6 +37,7 @@ const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
 };
 
 export const Headsets = () => {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -50,6 +52,11 @@ export const Headsets = () => {
   const [headsetForHistory, setHeadsetForHistory] = useState<Headset | null>(null);
 
   const [isExporting, setIsExporting] = useState(false);
+
+  // Seleção em massa
+  const [selectedHeadsetIds, setSelectedHeadsetIds] = useState<string[]>([]);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
   // Estados para importação em lote
   const [parsedHeadsets, setParsedHeadsets] = useState<HeadsetInput[]>([]);
@@ -79,6 +86,33 @@ export const Headsets = () => {
     resolver: zodResolver(headsetSchema),
   });
 
+  const toggleSelectAllHeadsets = () => {
+    if (selectedHeadsetIds.length === (headsetsData?.headsets.length || 0)) {
+      setSelectedHeadsetIds([]);
+    } else {
+      setSelectedHeadsetIds(headsetsData?.headsets.map(h => h.id) || []);
+    }
+  };
+
+  const toggleSelectOneHeadset = (id: string) => {
+    setSelectedHeadsetIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedHeadsetIds.length === 0) return;
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Excluindo ${selectedHeadsetIds.length} headsets...`);
+    try {
+      for (const id of selectedHeadsetIds) await headsetService.deleteHeadset(id);
+      queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      toast.success('Headsets removidos com sucesso!', { id: toastId });
+      setSelectedHeadsetIds([]);
+      setIsBulkDeleteConfirmOpen(false);
+    } catch (error) {
+      toast.error('Erro ao excluir headsets.', { id: toastId });
+    } finally { setIsProcessingBulk(false); }
+  };
+
   const handleHeadsetExport = async () => {
     try {
       setIsExporting(true);
@@ -93,6 +127,7 @@ export const Headsets = () => {
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
+    setSelectedHeadsetIds([]);
   };
 
   const handleOpenModal = (headset?: Headset) => {
@@ -136,7 +171,6 @@ export const Headsets = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tamanho (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setBulkErrors([{ row: 0, errors: ['O arquivo deve ter no máximo 5MB.'] }]);
       return;
@@ -167,7 +201,7 @@ export const Headsets = () => {
         const lacresInSheet = new Set<string>();
 
         data.forEach((row, index) => {
-          const rowNum = index + 2; // +1 header, +1 zero-based
+          const rowNum = index + 2;
           const rowErrors: string[] = [];
 
           // Mapeamento e Limpeza
@@ -294,7 +328,7 @@ export const Headsets = () => {
         </div>
 
         <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm w-full md:w-auto">
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <div className="flex items-center gap-4 border-r border-border-primary pr-6">
               <div className="flex items-center gap-2 text-text-secondary">
                 <SlidersHorizontal size={16} />
@@ -304,7 +338,7 @@ export const Headsets = () => {
                 {[10, 20, 50].map((num) => (
                   <button 
                     key={num} 
-                    onClick={() => { setLimit(num); setPage(1); }} 
+                    onClick={() => { setLimit(num); setPage(1); setSelectedHeadsetIds([]); }} 
                     className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all ${limit === num ? 'bg-primary-500 text-white shadow-glow-purple' : 'bg-hover-bg text-text-secondary hover:text-text-primary border border-border-primary'}`}
                   >
                     {num}
@@ -319,7 +353,7 @@ export const Headsets = () => {
               </div>
               <select 
                 value={statusFilter} 
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} 
+                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); setSelectedHeadsetIds([]); }} 
                 className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
               >
                 <option value="">Status</option>
@@ -328,6 +362,14 @@ export const Headsets = () => {
                 ))}
               </select>
             </div>
+            {(search || statusFilter) && (
+              <button 
+                onClick={() => { setSearch(''); setStatusFilter(''); setPage(1); setSelectedHeadsetIds([]); }} 
+                className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
+              >
+                Limpar Filtros
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -338,6 +380,14 @@ export const Headsets = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
+                <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                  <input 
+                    type="checkbox" 
+                    className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                    checked={!!(headsetsData?.headsets && headsetsData.headsets.length > 0 && selectedHeadsetIds.length === headsetsData.headsets.length)} 
+                    onChange={toggleSelectAllHeadsets} 
+                  />
+                </th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Matrícula</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Lacre</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Marca</th>
@@ -351,6 +401,7 @@ export const Headsets = () => {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
+                    <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                     <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -362,7 +413,15 @@ export const Headsets = () => {
                 ))
               ) : headsetsData?.headsets && headsetsData.headsets.length > 0 ? (
                 headsetsData.headsets.map((headset) => (
-                  <tr key={headset.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0">
+                  <tr key={headset.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedHeadsetIds.includes(headset.id) ? 'bg-primary-500/5' : ''}`}>
+                    <td className="px-6 py-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                        checked={selectedHeadsetIds.includes(headset.id)} 
+                        onChange={() => toggleSelectOneHeadset(headset.id)} 
+                      />
+                    </td>
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">{headset.matricula}</td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.lacre}</td>
                     <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
@@ -401,7 +460,7 @@ export const Headsets = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
+                  <td colSpan={8} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
                     Nenhum headset encontrado.
                   </td>
                 </tr>
@@ -420,18 +479,41 @@ export const Headsets = () => {
           <div className="flex gap-2">
             <button 
               disabled={page === 1} 
-              onClick={() => setPage(p => p - 1)} 
+              onClick={() => { setPage(p => p - 1); setSelectedHeadsetIds([]); }} 
               className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"
             >
               <ChevronLeft size={20} />
             </button>
             <button 
               disabled={page >= headsetsData.pagination.totalPages} 
-              onClick={() => setPage(p => p + 1)} 
+              onClick={() => { setPage(p => p + 1); setSelectedHeadsetIds([]); }} 
               className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"
             >
               <ChevronRight size={20} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ações em Massa */}
+      {selectedHeadsetIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
+            <div className="flex items-center gap-2 border-r border-primary-400 pr-6">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedHeadsetIds.length}</div>
+              <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsBulkDeleteConfirmOpen(true)} 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Trash2 size={16} /> Excluir
+              </button>
+              <button onClick={() => setSelectedHeadsetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -636,6 +718,7 @@ export const Headsets = () => {
         title="Excluir Headset" 
         description={`Tem certeza que deseja remover o headset da matrícula ${selectedHeadset?.matricula}?`} 
       />
+      <ConfirmDialog isOpen={isBulkDeleteConfirmOpen} onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)} onConfirm={handleBulkDelete} title={`Excluir ${selectedHeadsetIds.length} Headsets`} description="Remover permanentemente os headsets selecionados?" />
     </div>
   );
 };

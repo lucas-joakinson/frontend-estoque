@@ -42,13 +42,11 @@ export const computerService = {
     try {
       const LIMIT_PER_REQUEST = 100;
       let allComputers: Computer[] = [];
-      // Primeira requisição para saber o total de páginas
       const firstResponse = await this.listComputers(1, LIMIT_PER_REQUEST, search, status);
       allComputers = [...firstResponse.computers];
 
       const totalPages = firstResponse.pagination.totalPages;
 
-      // Busca as páginas restantes, se houver
       if (totalPages > 1) {
         const remainingPagesPromises = [];
         for (let p = 2; p <= totalPages; p++) {
