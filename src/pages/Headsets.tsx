@@ -56,7 +56,9 @@ export const Headsets = () => {
   // Seleção em massa
   const [selectedHeadsetIds, setSelectedHeadsetIds] = useState<string[]>([]);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const [bulkData, setBulkData] = useState({ status: '' as HeadsetStatus | '', observacoes: '' });
 
   // Estados para importação em lote
   const [parsedHeadsets, setParsedHeadsets] = useState<HeadsetInput[]>([]);
@@ -96,6 +98,28 @@ export const Headsets = () => {
 
   const toggleSelectOneHeadset = (id: string) => {
     setSelectedHeadsetIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedHeadsetIds.length === 0) return;
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Atualizando ${selectedHeadsetIds.length} headsets...`);
+    try {
+      for (const id of selectedHeadsetIds) {
+        const data: any = {};
+        if (bulkData.status) data.status = bulkData.status;
+        if (bulkData.observacoes) data.observacoes = bulkData.observacoes;
+
+        await headsetService.updateHeadset(id, data);
+      }
+      queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      toast.success('Headsets atualizados com sucesso!', { id: toastId });
+      setSelectedHeadsetIds([]);
+      setIsBulkUpdateModalOpen(false);
+      setBulkData({ status: '', observacoes: '' });
+    } catch (error) {
+      toast.error('Erro na atualização em massa.', { id: toastId });
+    } finally { setIsProcessingBulk(false); }
   };
 
   const handleBulkDelete = async () => {
@@ -505,6 +529,12 @@ export const Headsets = () => {
             </div>
             <div className="flex items-center gap-3">
               <button 
+                onClick={() => setIsBulkUpdateModalOpen(true)} 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Settings2 size={16} /> Alterar Status/Obs
+              </button>
+              <button 
                 onClick={() => setIsBulkDeleteConfirmOpen(true)} 
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
               >
@@ -517,6 +547,39 @@ export const Headsets = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Alteração em Massa */}
+      <Modal isOpen={isBulkUpdateModalOpen} onClose={() => !isProcessingBulk && setIsBulkUpdateModalOpen(false)} title={`Atualizar ${selectedHeadsetIds.length} Headsets`}>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status</label>
+            <select 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none" 
+              value={bulkData.status} 
+              onChange={(e) => setBulkData({ ...bulkData, status: e.target.value as HeadsetStatus })}
+            >
+              <option value="">Manter atual...</option>
+              {Object.entries(STATUS_LABELS).map(([val, { label }]) => ( <option key={val} value={val}>{label}</option> ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações</label>
+            <textarea 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none min-h-[100px] resize-none" 
+              placeholder="Manter atual..."
+              value={bulkData.observacoes} 
+              onChange={(e) => setBulkData({ ...bulkData, observacoes: e.target.value })} 
+            />
+          </div>
+          <button 
+            onClick={handleBulkUpdate} 
+            disabled={isProcessingBulk} 
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+          >
+            {isProcessingBulk ? <Spinner /> : 'Atualizar Itens'}
+          </button>
+        </div>
+      </Modal>
 
       {/* Modal Cadastro/Edição */}
       <Modal 
