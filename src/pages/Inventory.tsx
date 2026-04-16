@@ -485,6 +485,7 @@ export const Inventory = () => {
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Patrimônio</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item / Marca</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Responsável</th>
+                    <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Localização</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Categoria</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Status</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-right">Ações</th>
@@ -515,6 +516,9 @@ export const Inventory = () => {
                         </td>
                         <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">
                           {asset.responsible || '---'}
+                        </td>
+                        <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">
+                          {asset.location || '---'}
                         </td>
                         <td className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase">{asset.product?.category?.name || 'Sem Categoria'}</td>
                         <td className="px-6 py-4 text-center">
