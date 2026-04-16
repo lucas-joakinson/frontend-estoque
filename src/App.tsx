@@ -11,6 +11,7 @@ import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicRoute } from './components/PublicRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,52 +27,64 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route element={<PublicRoute />}>
-                <Route path="/login" element={<Login />} />
-              </Route>
-              
-              <Route element={<ProtectedRoute title="Dashboard" />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Gerenciar Estoque (Geral)" />}>
-                <Route path="/inventory" element={<Inventory />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Headsets" />}>
-                <Route path="/headsets" element={<Headsets />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
-                <Route path="/users" element={<Users />} />
-              </Route>
-
-              <Route element={<ProtectedRoute title="Meu Perfil" />}>
-                <Route path="/profile" element={<Profile />} />
-              </Route>
-
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </AuthProvider>
+          <ThemeProvider>
+            <AppContent />
+          </ThemeProvider>
         </BrowserRouter>
-        
-        <Toaster 
-          theme="dark" 
-          position="top-right" 
-          richColors 
-          toastOptions={{
-            style: {
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-primary)',
-              color: 'var(--text-primary)',
-            }
-          }}
-        />
       </QueryClientProvider>
     </ErrorBoundary>
+  );
+}
+
+function AppContent() {
+  const { theme } = useTheme();
+
+  return (
+    <>
+      <AuthProvider>
+        <Routes>
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+          </Route>
+          
+          <Route element={<ProtectedRoute title="Dashboard" />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Gerenciar Estoque (Geral)" />}>
+            <Route path="/inventory" element={<Inventory />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Headsets" />}>
+            <Route path="/headsets" element={<Headsets />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
+            <Route path="/users" element={<Users />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Meu Perfil" />}>
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+      
+      <Toaster 
+        theme={theme} 
+        position="top-right" 
+        richColors 
+        toastOptions={{
+          style: {
+            background: 'var(--surface)',
+            border: '1px solid var(--border-primary)',
+            color: 'var(--text-primary)',
+          }
+        }}
+      />
+    </>
   );
 }
 

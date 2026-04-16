@@ -16,13 +16,13 @@
   }
 
   .dark {
-    --background: #0f0f14;
-    --surface: #16161e;
+    --background: #0c0a1a;
+    --surface: #121021;
     --text-primary: #f5f3ff;
     --text-secondary: #a78bfa;
-    --border-primary: rgba(139, 92, 246, 0.05);
-    --border-secondary: rgba(139, 92, 246, 0.1);
-    --hover-bg: rgba(255, 255, 255, 0.03);
+    --border-primary: rgba(139, 92, 246, 0.1);
+    --border-secondary: rgba(139, 92, 246, 0.2);
+    --hover-bg: rgba(139, 92, 246, 0.1);
   }
 
   body {
