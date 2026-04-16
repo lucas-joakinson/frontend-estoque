@@ -796,7 +796,7 @@ export const Computers = () => {
                     <span className="text-text-secondary uppercase font-mono">{new Date(entry.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-2 text-text-primary font-mono"><MapPin size={14} className="text-primary-400" /> {entry.newLocalizacao}</div>
-                  {entry.observacoes && <div className="p-3 rounded-xl bg-surface/50 border border-border-primary italic text-text-secondary">"{entry.observacoes}"</div>}
+                  {entry.observation && <div className="p-3 rounded-xl bg-surface/50 border border-border-primary italic text-text-secondary">"{entry.observation}"</div>}
                   <div className="flex items-center gap-1.5 font-mono text-text-secondary/60 uppercase"><User size={12} /> Modificado por: {entry.user?.name || 'Sistema'}</div>
                 </div>
               </div>

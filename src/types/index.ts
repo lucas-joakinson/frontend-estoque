@@ -168,7 +168,7 @@ export interface ComputerHistory {
   newStatus: ComputerStatus;
   oldLocalizacao?: string | null;
   newLocalizacao: string;
-  observacoes?: string | null;
+  observation?: string | null;
   userId: string;
   user: User;
   createdAt: string;
