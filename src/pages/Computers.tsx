@@ -676,9 +676,7 @@ export const Computers = () => {
               <ol className="space-y-2">
                 {[
                   'Prepare um arquivo Excel (.xlsx) com os dados',
-                  'Selecione importar',
-                  'Clique no campo acima ou arraste o arquivo',
-                  'Clique em Validar para verificar se os dados estão corretos',
+                  'Selecione importar Excel',
                   'Se tudo estiver OK, clique em Importar para inserir no banco',
                   'Após importar, os dados aparecem na página de Computadores'
                 ].map((step, i) => (

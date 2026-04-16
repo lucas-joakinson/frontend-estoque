@@ -676,6 +676,48 @@ export const Headsets = () => {
         title="Importar Headsets (.xlsx)"
       >
         <form onSubmit={onBulkSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Como usar:</h4>
+              <ol className="space-y-2">
+                {[
+                  'Prepare um arquivo Excel (.xlsx) com os dados',
+                  'Selecione importar Excel',
+                  'Se tudo estiver OK, clique em Importar para inserir no banco',
+                  'Após importar, os dados aparecem na página de Headsets'
+                ].map((step, i) => (
+                  <li key={i} className="text-[10px] font-mono text-text-secondary flex gap-3 leading-relaxed">
+                    <span className="text-primary-400 font-bold">{i+1}.</span> {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Formato da Planilha:</h4>
+              <p className="text-[10px] font-mono text-text-primary font-bold tracking-widest bg-surface px-3 py-2 rounded-lg border border-border-primary">
+                PATRIMÔNIO | LACRE | MARCA | Nº SÉRIE | STATUS | OBSERVAÇÕES
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-primary-500/5 border border-primary-500/10">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Dicas:</h4>
+              <ul className="space-y-1">
+                {[
+                  'Tamanho máximo do arquivo: 5 MB',
+                  'Formato suportado: Excel (.xlsx) apenas',
+                  'Cada planilha deve ter uma aba \'headsets  \'',
+                  'Validação ocorre antes da importação para evitar erros',
+                  'A importação não pode ser desfeita, então valide bem antes de importar!',
+                  'Você pode importar headsets e computadores em arquivos separados ou no mesmo arquivo'
+                ].map((tip, i) => (
+                  <li key={i} className="text-[10px] font-mono text-text-secondary flex gap-2 before:content-['•'] before:text-primary-400">
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
           <div className="space-y-2">
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Selecione o arquivo Excel</label>
             <div className="relative group">
