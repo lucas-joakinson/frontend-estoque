@@ -4,12 +4,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
-  Headphones, History, User, Tag, ClipboardList
+  History, User, ClipboardList,
+  PackagePlus
 } from 'lucide-react';
 
 // Hooks
-import { useHeadsets } from '../hooks/useHeadsets';
+import { useHeadsets, useHeadsetHistory } from '../hooks/useHeadsets';
 import { useDebounce } from '../hooks/useDebounce';
+
+import * as XLSX from 'xlsx';
 
 // UI Components
 import { Skeleton } from '../components/ui/Skeleton';
@@ -24,9 +27,10 @@ import { headsetSchema, type HeadsetInput } from '../schemas/headset.schema';
 import type { Headset, HeadsetStatus } from '../types';
 
 const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
-  LIGADO: { label: 'Ligado', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  DESLIGADO: { label: 'Desligado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
-  MANUTENÇÃO: { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  'EM USO': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  'RESERVA': { label: 'Reserva', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  'TROCA PENDENTE': { label: 'Troca Pendente', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  'DESLIGADO': { label: 'Desligado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
 };
 
 export const Headsets = () => {
@@ -37,18 +41,30 @@ export const Headsets = () => {
   const debouncedSearch = useDebounce(search, 500);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [selectedHeadset, setSelectedHeadset] = useState<Headset | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [headsetForHistory, setHeadsetForHistory] = useState<Headset | null>(null);
+
+  // Estados para importação em lote
+  const [parsedHeadsets, setParsedHeadsets] = useState<HeadsetInput[]>([]);
+  const [bulkErrors, setBulkErrors] = useState<{ row: number; errors: string[] }[]>([]);
+  const [isParsing, setIsParsing] = useState(false);
 
   const { 
     headsetsData, 
     isLoading, 
     createHeadset, 
     isCreating, 
+    bulkCreateHeadset,
+    isBulkCreating,
     updateHeadset, 
     isUpdating, 
     deleteHeadset 
   } = useHeadsets(page, limit, debouncedSearch, statusFilter);
+
+  const { data: headsetHistory, isLoading: isLoadingHistory } = useHeadsetHistory(headsetForHistory?.id || null);
 
   const {
     register,
@@ -71,7 +87,7 @@ export const Headsets = () => {
         matricula: headset.matricula,
         lacre: headset.lacre,
         marca: headset.marca,
-        numeroSerie: headset.numeroSerie,
+        numeroSerie: headset.numeroSerie || '',
         status: headset.status,
         observacoes: headset.observacoes || '',
       });
@@ -82,7 +98,7 @@ export const Headsets = () => {
         lacre: '',
         marca: '',
         numeroSerie: '',
-        status: 'LIGADO',
+        status: 'RESERVA',
         observacoes: '',
       });
     }
@@ -101,6 +117,118 @@ export const Headsets = () => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tamanho (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setBulkErrors([{ row: 0, errors: ['O arquivo deve ter no máximo 5MB.'] }]);
+      return;
+    }
+
+    setIsParsing(true);
+    setBulkErrors([]);
+    setParsedHeadsets([]);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        
+        const wsname = wb.SheetNames.find(name => name.toLowerCase() === 'headsets');
+        if (!wsname) {
+          setBulkErrors([{ row: 0, errors: ['A aba "headsets" não foi encontrada no arquivo.'] }]);
+          setIsParsing(false);
+          return;
+        }
+
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws) as any[];
+        
+        const results: HeadsetInput[] = [];
+        const errorsList: { row: number; errors: string[] }[] = [];
+        const lacresInSheet = new Set<string>();
+
+        data.forEach((row, index) => {
+          const rowNum = index + 2; // +1 header, +1 zero-based
+          const rowErrors: string[] = [];
+
+          // Mapeamento e Limpeza
+          const rawMatricula = String(row['MATRÍCULA'] || '').trim();
+          const rawLacre = String(row['LACRE'] || '').trim();
+          const rawMarca = String(row['MARCA'] || '').trim();
+          const rawSerie = String(row['Nº SÉRIE'] || '').trim();
+          const rawStatus = String(row['STATUS'] || '').trim().toUpperCase();
+          const rawObs = String(row['OBSERVAÇÕES'] || '').trim();
+
+          // Validação
+          if (!rawMatricula) rowErrors.push('MATRÍCULA é obrigatória');
+          if (!rawLacre) {
+            rowErrors.push('LACRE é obrigatório');
+          } else if (rawLacre.length > 5) {
+            rowErrors.push('LACRE deve ter no máximo 5 caracteres');
+          } else if (lacresInSheet.has(rawLacre)) {
+            rowErrors.push(`LACRE duplicado na planilha: ${rawLacre}`);
+          }
+          
+          if (!rawMarca) rowErrors.push('MARCA é obrigatória');
+          
+          const validStatuses = ['EM USO', 'RESERVA', 'TROCA PENDENTE', 'DESLIGADO'];
+          if (!rawStatus) {
+            rowErrors.push('STATUS é obrigatório');
+          } else if (!validStatuses.includes(rawStatus)) {
+            rowErrors.push(`STATUS inválido: ${rawStatus}. Use: EM USO, RESERVA, TROCA PENDENTE ou DESLIGADO`);
+          }
+
+          if (rowErrors.length > 0) {
+            errorsList.push({ row: rowNum, errors: rowErrors });
+          } else {
+            lacresInSheet.add(rawLacre);
+            results.push({
+              matricula: rawMatricula,
+              lacre: rawLacre,
+              marca: rawMarca,
+              numeroSerie: rawSerie || null,
+              status: rawStatus as any,
+              observacoes: rawObs || null,
+            });
+          }
+        });
+
+        setParsedHeadsets(results);
+        setBulkErrors(errorsList);
+      } catch (err) {
+        setBulkErrors([{ row: 0, errors: ['Erro ao processar o arquivo. Verifique se é um .xlsx válido.'] }]);
+      } finally {
+        setIsParsing(false);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
+  const onBulkSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (parsedHeadsets.length === 0 || bulkErrors.length > 0) return;
+
+    bulkCreateHeadset(parsedHeadsets as any, {
+      onSuccess: () => {
+        setIsBulkModalOpen(false);
+        setParsedHeadsets([]);
+        setBulkErrors([]);
+      }
+    });
+  };
+
+  const handleCloseBulkModal = () => {
+    if (!isBulkCreating && !isParsing) {
+      setIsBulkModalOpen(false);
+      setParsedHeadsets([]);
+      setBulkErrors([]);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
       {/* Header */}
@@ -114,12 +242,20 @@ export const Headsets = () => {
           </p>
         </div>
 
-        <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center"
-        >
-          <Plus size={18} /> Novo Headset
-        </button>
+        <div className="flex gap-2 w-full md:w-auto">
+          <button 
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+          >
+            <Plus size={18} /> Novo Headset
+          </button>
+          <button 
+            onClick={() => setIsBulkModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+          >
+            <PackagePlus size={18} /> Cadastro em Lote
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -170,9 +306,6 @@ export const Headsets = () => {
                 ))}
               </select>
             </div>
-            {statusFilter && (
-              <button onClick={() => { setStatusFilter(''); setPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar</button>
-            )}
           </div>
         </div>
       </div>
@@ -211,7 +344,7 @@ export const Headsets = () => {
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">{headset.matricula}</td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.lacre}</td>
                     <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
-                    <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.numeroSerie}</td>
+                    <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.numeroSerie || '---'}</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[headset.status].color}`}>
                         {STATUS_LABELS[headset.status].label}
@@ -222,6 +355,12 @@ export const Headsets = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
+                        <button 
+                          onClick={() => { setHeadsetForHistory(headset); setIsHistoryModalOpen(true); }} 
+                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-amber-400 transition-all"
+                        >
+                          <History size={14} />
+                        </button>
                         <button 
                           onClick={() => handleOpenModal(headset)} 
                           className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
@@ -296,6 +435,7 @@ export const Headsets = () => {
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Lacre</label>
               <input 
                 type="text" 
+                maxLength={5}
                 className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.lacre ? 'border-red-500' : 'border-border-primary'}`} 
                 {...register('lacre')} 
               />
@@ -314,13 +454,12 @@ export const Headsets = () => {
               {errors.marca && <span className="text-[10px] text-red-500 font-mono">{errors.marca.message}</span>}
             </div>
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nº Série</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nº Série (Opcional)</label>
               <input 
                 type="text" 
-                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.numeroSerie ? 'border-red-500' : 'border-border-primary'}`} 
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50" 
                 {...register('numeroSerie')} 
               />
-              {errors.numeroSerie && <span className="text-[10px] text-red-500 font-mono">{errors.numeroSerie.message}</span>}
             </div>
           </div>
 
@@ -361,6 +500,110 @@ export const Headsets = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Cadastro em Lote */}
+      <Modal 
+        isOpen={isBulkModalOpen} 
+        onClose={handleCloseBulkModal} 
+        title="Importar Headsets (.xlsx)"
+      >
+        <form onSubmit={onBulkSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Selecione o arquivo Excel</label>
+            <div className="relative group">
+              <input 
+                type="file" 
+                accept=".xlsx"
+                onChange={handleFileUpload}
+                disabled={isParsing || isBulkCreating}
+                className="w-full px-4 py-8 rounded-2xl bg-hover-bg border-2 border-dashed border-border-primary text-text-secondary font-mono text-xs cursor-pointer file:hidden hover:border-primary-500/50 transition-all text-center"
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
+                <PackagePlus className="text-text-secondary group-hover:text-primary-400 transition-colors" size={24} />
+                <span className="text-[10px] uppercase tracking-widest">Clique ou arraste o arquivo .xlsx</span>
+              </div>
+            </div>
+            <p className="text-[10px] font-mono text-text-secondary/60 uppercase text-center">Tamanho máximo: 5MB | Aba obrigatória: "headsets"</p>
+          </div>
+
+          {isParsing && (
+            <div className="flex flex-col items-center justify-center py-6 gap-3 bg-hover-bg rounded-2xl border border-border-primary animate-pulse">
+              <Spinner size={24} />
+              <span className="text-[10px] font-mono text-primary-400 uppercase tracking-widest">Processando planilha...</span>
+            </div>
+          )}
+
+          {bulkErrors.length > 0 && (
+            <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 space-y-3 max-h-[200px] overflow-y-auto no-scrollbar">
+              <div className="flex items-center gap-2 text-red-400">
+                <SlidersHorizontal size={14} />
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Erros de Validação:</span>
+              </div>
+              <ul className="space-y-2">
+                {bulkErrors.map((err, i) => (
+                  <li key={i} className="text-[10px] font-mono text-red-400/80 leading-relaxed border-l-2 border-red-500/30 pl-3">
+                    {err.row > 0 ? `Linha ${err.row}: ` : ''}{err.errors.join(', ')}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {parsedHeadsets.length > 0 && bulkErrors.length === 0 && (
+            <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
+              <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest font-bold">Resumo da Importação</span>
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/20">
+                    {parsedHeadsets.length} Equipamentos Encontrados
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+                <p className="text-[10px] font-mono text-amber-400 uppercase leading-relaxed text-center">
+                  Atenção: Esta operação não pode ser desfeita após a confirmação.
+                </p>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isBulkCreating} 
+                className="w-full py-4 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center gap-2"
+              >
+                {isBulkCreating ? <Spinner /> : (
+                  <>
+                    <ClipboardList size={18} /> Confirmar Importação
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </form>
+      </Modal>
+
+      {/* Modal Histórico */}
+      <Modal isOpen={isHistoryModalOpen} onClose={() => { setIsHistoryModalOpen(false); setHeadsetForHistory(null); }} title={`Histórico: Headset Matrícula ${headsetForHistory?.matricula}`}>
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
+          {isLoadingHistory ? (
+            <div className="flex justify-center py-10"><Spinner size={32} /></div>
+          ) : headsetHistory && headsetHistory.length > 0 ? (
+            headsetHistory.map((entry, i) => (
+              <div key={entry.id} className={`relative pl-8 ${i !== headsetHistory.length - 1 ? 'pb-8 border-l border-border-primary' : ''}`}>
+                <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${STATUS_LABELS[entry.newStatus]?.color.split(' ')[0] || 'bg-primary-500'}`} />
+                <div className="flex flex-col gap-3 p-4 rounded-2xl bg-hover-bg border border-border-primary text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-0.5 rounded-full font-bold border ${STATUS_LABELS[entry.newStatus]?.color}`}>{STATUS_LABELS[entry.newStatus]?.label}</span>
+                    <span className="text-text-secondary uppercase font-mono">{new Date(entry.createdAt).toLocaleString()}</span>
+                  </div>
+                  {entry.observation && <div className="p-3 rounded-xl bg-surface/50 border border-border-primary italic text-text-secondary">"{entry.observation}"</div>}
+                  <div className="flex items-center gap-1.5 font-mono text-text-secondary/60 uppercase"><User size={12} /> Modificado por: {entry.user?.name || 'Sistema'}</div>
+                </div>
+              </div>
+            ))
+          ) : ( <div className="text-center py-8 text-text-secondary font-mono italic">Nenhum histórico encontrado.</div> )}
+        </div>
       </Modal>
 
       {/* Confirmação de Exclusão */}

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { headsetService } from '../services/headset.service';
 import { toast } from 'sonner';
-import type { HeadsetStatus, HeadsetsResponse, Headset } from '../types';
+import type { Headset } from '../types';
 
 export const useHeadsets = (
   page = 1, 
@@ -29,6 +29,18 @@ export const useHeadsets = (
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || 'Erro ao registrar headset');
+    },
+  });
+
+  const bulkCreateMutation = useMutation({
+    mutationFn: (data: Omit<Headset, 'id' | 'createdAt' | 'updatedAt'>[]) => 
+      headsetService.bulkCreateHeadsets(data),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      toast.success(`${response.count} headsets registrados com sucesso!`);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Erro ao registrar headsets em lote');
     },
   });
 
@@ -60,9 +72,19 @@ export const useHeadsets = (
     isLoading: headsetsQuery.isLoading,
     createHeadset: createMutation.mutate,
     isCreating: createMutation.isPending,
+    bulkCreateHeadset: bulkCreateMutation.mutate,
+    isBulkCreating: bulkCreateMutation.isPending,
     updateHeadset: updateMutation.mutate,
     isUpdating: updateMutation.isPending,
     deleteHeadset: deleteMutation.mutate,
     isDeleting: deleteMutation.isPending,
   };
+};
+
+export const useHeadsetHistory = (headsetId: string | null) => {
+  return useQuery({
+    queryKey: ['headsets', headsetId, 'history'],
+    queryFn: () => headsetId ? headsetService.getHeadsetHistory(headsetId) : Promise.resolve([]),
+    enabled: !!headsetId,
+  });
 };

@@ -113,18 +113,29 @@ export interface AssetsResponse {
   };
 }
 
-export type HeadsetStatus = 'LIGADO' | 'DESLIGADO' | 'MANUTENÇÃO';
+export type HeadsetStatus = 'EM USO' | 'RESERVA' | 'TROCA PENDENTE' | 'DESLIGADO';
 
 export interface Headset {
   id: string;
   matricula: string;
   lacre: string;
   marca: string;
-  numeroSerie: string;
+  numeroSerie?: string | null;
   status: HeadsetStatus;
   observacoes?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HeadsetHistory {
+  id: string;
+  headsetId: string;
+  oldStatus?: HeadsetStatus | null;
+  newStatus: HeadsetStatus;
+  observation?: string | null;
+  userId: string;
+  user: User;
+  createdAt: string;
 }
 
 export interface HeadsetsResponse {

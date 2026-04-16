@@ -308,7 +308,7 @@ export const Inventory = () => {
   const [catPage, setCatPage] = useState(1);
   const [catLimit, setCatLimit] = useState(10);
   const [catSearch, setCatSearch] = useState('');
-  const [catSortBy, setCatSortBy] = useState<'name' | 'createdAt'>('name');
+  const [catSortBy] = useState<'name' | 'createdAt'>('name');
   const [catOrder, setCatOrder] = useState<'asc' | 'desc'>('asc');
   const debouncedCatSearch = useDebounce(catSearch, 500);
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
