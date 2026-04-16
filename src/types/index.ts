@@ -147,3 +147,37 @@ export interface HeadsetsResponse {
     totalPages: number;
   };
 }
+
+export type ComputerStatus = 'EM USO' | 'MANUTENCAO' | 'DEFEITO' | 'TROCA PENDENTE' | 'EM ESTOQUE';
+
+export interface Computer {
+  id: string;
+  patrimonio: string;
+  hostname: string;
+  status: ComputerStatus;
+  location: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ComputerHistory {
+  id: string;
+  computerId: string;
+  oldStatus?: ComputerStatus | null;
+  newStatus: ComputerStatus;
+  oldLocation?: string | null;
+  newLocation: string;
+  userId: string;
+  user: User;
+  createdAt: string;
+}
+
+export interface ComputersResponse {
+  computadores: Computer[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Inventory } from './pages/Inventory';
 import { Headsets } from './pages/Headsets';
+import { Computers } from './pages/Computers';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -59,8 +60,11 @@ function AppContent() {
             <Route path="/headsets" element={<Headsets />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>
-            <Route path="/users" element={<Users />} />
+          <Route element={<ProtectedRoute title="Computadores" />}>
+            <Route path="/computers" element={<Computers />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>            <Route path="/users" element={<Users />} />
           </Route>
 
           <Route element={<ProtectedRoute title="Meu Perfil" />}>
