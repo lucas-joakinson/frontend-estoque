@@ -1,73 +1,92 @@
-# React + TypeScript + Vite
+# Gerenciador de Estoque - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema moderno para gerenciamento de estoque e controle de ativos (Computadores e Headsets), desenvolvido com React 19, TypeScript e Vite.
 
-Currently, two official plugins are available:
+## 🚀 Funcionalidades
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Dashboard**: Visualização de dados e métricas através de gráficos interativos (Recharts).
+- **Gerenciamento de Ativos**:
+  - **Computadores**: Controle detalhado de hardware, atribuição e status.
+  - **Headsets**: Monitoramento de periféricos e distribuição.
+- **Controle de Inventário**: Gestão centralizada de produtos e categorias.
+- **Gestão de Usuários**: Controle de acesso, permissões e perfis.
+- **Autenticação**: Sistema seguro de login com proteção de rotas.
+- **Perfil do Usuário**: Personalização e visualização de informações do colaborador.
+- **Exportação**: Suporte para exportação de relatórios em Excel (.xlsx).
+- **Interface Responsiva**: Design moderno e adaptável com suporte a Temas (Light/Dark).
 
-## React Compiler
+## 🛠️ Tecnologias Utilizadas
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Core
+- **React 19**: Biblioteca principal para construção da interface.
+- **TypeScript**: Tipagem estática para maior segurança e produtividade.
+- **Vite**: Build tool extremamente rápida para desenvolvimento moderno.
 
-## Expanding the ESLint configuration
+### Estado e Dados
+- **TanStack Query (React Query)**: Gerenciamento de estado assíncrono e cache de dados.
+- **Axios**: Cliente HTTP para consumo da API.
+- **React Hook Form**: Manipulação de formulários performática.
+- **Zod**: Validação de esquemas e tipos em tempo de execução.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Estilização e UI
+- **Tailwind CSS**: Framework CSS utilitário para design rápido e consistente.
+- **Lucide React**: Conjunto de ícones leves e elegantes.
+- **Sonner**: Sistema de notificações (toasts) moderno.
+- **Recharts**: Biblioteca de gráficos para visualização de dados.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Estrutura do Projeto
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```text
+src/
+├── assets/         # Recursos estáticos (imagens, svgs)
+├── components/     # Componentes reutilizáveis (UI e Layout)
+├── contexts/       # Contextos da aplicação (Auth, Theme)
+├── hooks/          # Hooks customizados para lógica e fetch de dados
+├── lib/            # Configurações de bibliotecas externas (API)
+├── pages/          # Páginas/Telas principais da aplicação
+├── schemas/        # Esquemas de validação Zod
+├── services/       # Chamadas de API e serviços de negócio
+├── types/          # Definições de tipos TypeScript
+└── utils/          # Funções utilitárias
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🔧 Configuração e Instalação
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Pré-requisitos
+- Node.js (versão 18 ou superior)
+- NPM ou Yarn
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Instalação
+
+1. Clone o repositório:
+   ```bash
+   git clone [url-do-repositorio]
+   cd gerenciador-de-estoque-frontend
+   ```
+
+2. Instale as dependências:
+   ```bash
+   npm install
+   ```
+
+3. Configure as variáveis de ambiente:
+   Crie um arquivo `.env` na raiz do projeto:
+   ```env
+   VITE_API_URL=http://localhost:3333
+   ```
+
+4. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+## 🚀 Build e Deploy
+
+Para gerar a versão de produção:
+```bash
+npm run build
 ```
+Os arquivos serão gerados na pasta `dist/`.
+
+---
+Desenvolvido com uma coquinha e muito código por Lucas Joakinson.
