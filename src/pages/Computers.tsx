@@ -57,7 +57,9 @@ export const Computers = () => {
   // Seleção em massa
   const [selectedComputerIds, setSelectedComputerIds] = useState<string[]>([]);
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkUpdateModalOpen, setIsBulkUpdateModalOpen] = useState(false);
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+  const [bulkData, setBulkData] = useState({ status: '' as ComputerStatus | '', localizacao: '', observacoes: '' });
 
   // Estados para importação em lote
   const [parsedComputers, setParsedComputers] = useState<ComputerInput[]>([]);
@@ -103,6 +105,29 @@ export const Computers = () => {
 
   const toggleSelectOneComputer = (id: string) => {
     setSelectedComputerIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkUpdate = async () => {
+    if (selectedComputerIds.length === 0) return;
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Atualizando ${selectedComputerIds.length} computadores...`);
+    try {
+      for (const id of selectedComputerIds) {
+        const data: any = {};
+        if (bulkData.status) data.status = bulkData.status;
+        if (bulkData.localizacao) data.localizacao = bulkData.localizacao;
+        if (bulkData.observacoes) data.observacoes = bulkData.observacoes;
+        
+        await computerService.updateComputer(id, data);
+      }
+      queryClient.invalidateQueries({ queryKey: ['computers'] });
+      toast.success('Computadores atualizados com sucesso!', { id: toastId });
+      setSelectedComputerIds([]);
+      setIsBulkUpdateModalOpen(false);
+      setBulkData({ status: '', localizacao: '', observacoes: '' });
+    } catch (error) {
+      toast.error('Erro na atualização em massa.', { id: toastId });
+    } finally { setIsProcessingBulk(false); }
   };
 
   const handleBulkDelete = async () => {
@@ -496,6 +521,12 @@ export const Computers = () => {
             </div>
             <div className="flex items-center gap-3">
               <button 
+                onClick={() => setIsBulkUpdateModalOpen(true)} 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+              >
+                <Settings2 size={16} /> Alterar Status/Local
+              </button>
+              <button 
                 onClick={() => setIsBulkDeleteConfirmOpen(true)} 
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
               >
@@ -508,6 +539,51 @@ export const Computers = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Alteração em Massa */}
+      <Modal isOpen={isBulkUpdateModalOpen} onClose={() => !isProcessingBulk && setIsBulkUpdateModalOpen(false)} title={`Atualizar ${selectedComputerIds.length} Computadores`}>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status</label>
+              <select 
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none" 
+                value={bulkData.status} 
+                onChange={(e) => setBulkData({ ...bulkData, status: e.target.value as ComputerStatus })}
+              >
+                <option value="">Manter atual...</option>
+                {Object.entries(STATUS_LABELS).map(([val, { label }]) => ( <option key={val} value={val}>{label}</option> ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Localização</label>
+              <input 
+                type="text" 
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none" 
+                placeholder="Manter atual..." 
+                value={bulkData.localizacao} 
+                onChange={(e) => setBulkData({ ...bulkData, localizacao: e.target.value })} 
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações</label>
+            <textarea 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none min-h-[100px] resize-none" 
+              placeholder="Manter atual..."
+              value={bulkData.observacoes} 
+              onChange={(e) => setBulkData({ ...bulkData, observacoes: e.target.value })} 
+            />
+          </div>
+          <button 
+            onClick={handleBulkUpdate} 
+            disabled={isProcessingBulk} 
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12"
+          >
+            {isProcessingBulk ? <Spinner /> : 'Atualizar Itens'}
+          </button>
+        </div>
+      </Modal>
 
       {/* Modal Cadastro/Edição */}
       <Modal 
@@ -720,6 +796,7 @@ export const Computers = () => {
                     <span className="text-text-secondary uppercase font-mono">{new Date(entry.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-2 text-text-primary font-mono"><MapPin size={14} className="text-primary-400" /> {entry.newLocalizacao}</div>
+                  {entry.observacoes && <div className="p-3 rounded-xl bg-surface/50 border border-border-primary italic text-text-secondary">"{entry.observacoes}"</div>}
                   <div className="flex items-center gap-1.5 font-mono text-text-secondary/60 uppercase"><User size={12} /> Modificado por: {entry.user?.name || 'Sistema'}</div>
                 </div>
               </div>
