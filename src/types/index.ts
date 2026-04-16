@@ -112,3 +112,27 @@ export interface AssetsResponse {
     totalPages: number;
   };
 }
+
+export type HeadsetStatus = 'LIGADO' | 'DESLIGADO' | 'MANUTENÇÃO';
+
+export interface Headset {
+  id: string;
+  matricula: string;
+  lacre: string;
+  marca: string;
+  numeroSerie: string;
+  status: HeadsetStatus;
+  observacoes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HeadsetsResponse {
+  headsets: Headset[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}

@@ -108,7 +108,6 @@ export const Inventory = () => {
       return;
     }
 
-    // Processa o texto: separa por linha ou vírgula, remove espaços e linhas vazias
     const patrimonioList = bulkForm.patrimoniosText
       .split(/[\n,]/)
       .map(p => p.trim())

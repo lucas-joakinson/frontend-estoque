@@ -5,6 +5,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Inventory } from './pages/Inventory';
+import { Headsets } from './pages/Headsets';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -37,6 +38,10 @@ function App() {
 
               <Route element={<ProtectedRoute title="Gerenciar Estoque (Geral)" />}>
                 <Route path="/inventory" element={<Inventory />} />
+              </Route>
+
+              <Route element={<ProtectedRoute title="Headsets" />}>
+                <Route path="/headsets" element={<Headsets />} />
               </Route>
 
               <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>

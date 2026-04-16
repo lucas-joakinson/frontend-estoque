@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Users as UsersIcon } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Users as UsersIcon, Headphones } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { Avatar } from '../ui/Avatar';
@@ -11,6 +11,7 @@ export const Sidebar = () => {
   const links = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/inventory', label: 'Gerenciar Estoque', icon: Package },
+    { to: '/headsets', label: 'Headsets', icon: Headphones },
   ];
 
   return (
