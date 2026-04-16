@@ -148,14 +148,15 @@ export interface HeadsetsResponse {
   };
 }
 
-export type ComputerStatus = 'EM USO' | 'MANUTENCAO' | 'DEFEITO' | 'TROCA PENDENTE' | 'EM ESTOQUE';
+export type ComputerStatus = 'Em uso' | 'Manutenção' | 'Defeito' | 'Troca pendente' | 'Em estoque';
 
 export interface Computer {
   id: string;
   patrimonio: string;
   hostname: string;
   status: ComputerStatus;
-  location: string;
+  localizacao: string;
+  observacoes?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -165,15 +166,15 @@ export interface ComputerHistory {
   computerId: string;
   oldStatus?: ComputerStatus | null;
   newStatus: ComputerStatus;
-  oldLocation?: string | null;
-  newLocation: string;
+  oldLocalizacao?: string | null;
+  newLocalizacao: string;
   userId: string;
   user: User;
   createdAt: string;
 }
 
 export interface ComputersResponse {
-  computadores: Computer[];
+  computers: Computer[];
   pagination: {
     page: number;
     limit: number;

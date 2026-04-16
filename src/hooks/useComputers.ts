@@ -13,7 +13,17 @@ export const useComputers = (
 
   const { data: computersData, isLoading } = useQuery({
     queryKey: ['computers', page, limit, search, status],
-    queryFn: () => computerService.listComputers(page, limit, search, status),
+    queryFn: async () => {
+      const data = await computerService.listComputers(page, limit, search, status);
+      // Sanitização para garantir que localizacao seja preenchido mesmo se vier como location
+      if (data.computers) {
+        data.computers = data.computers.map((comp: any) => ({
+          ...comp,
+          localizacao: comp.localizacao || comp.location || 'Não informada'
+        }));
+      }
+      return data;
+    },
   });
 
   const { mutate: createComputer, isPending: isCreating } = useMutation({

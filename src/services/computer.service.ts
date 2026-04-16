@@ -42,29 +42,30 @@ export const computerService = {
     try {
       const LIMIT_PER_REQUEST = 100;
       let allComputers: Computer[] = [];
-      
+      // Primeira requisição para saber o total de páginas
       const firstResponse = await this.listComputers(1, LIMIT_PER_REQUEST, search, status);
-      allComputers = [...firstResponse.computadores];
-      
+      allComputers = [...firstResponse.computers];
+
       const totalPages = firstResponse.pagination.totalPages;
+
+      // Busca as páginas restantes, se houver
       if (totalPages > 1) {
         const remainingPagesPromises = [];
         for (let p = 2; p <= totalPages; p++) {
           remainingPagesPromises.push(this.listComputers(p, LIMIT_PER_REQUEST, search, status));
         }
-        
+
         const remainingResponses = await Promise.all(remainingPagesPromises);
         remainingResponses.forEach(response => {
-          allComputers = [...allComputers, ...response.computadores];
+          allComputers = [...allComputers, ...response.computers];
         });
       }
-
       const headers = ['Patrimonio', 'Hostname', 'Status', 'Localizacao', 'Data Cadastro'];
       const rows = allComputers.map(comp => [
         comp.patrimonio,
         comp.hostname,
         comp.status,
-        comp.location,
+        comp.localizacao,
         new Date(comp.createdAt).toLocaleDateString()
       ]);
 

@@ -29,11 +29,11 @@ import { computerSchema, type ComputerInput } from '../schemas/computer.schema';
 import type { Computer, ComputerStatus } from '../types';
 
 const STATUS_LABELS: Record<ComputerStatus, { label: string; color: string }> = {
-  'EM USO': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  'MANUTENCAO': { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  'DEFEITO': { label: 'Defeito', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
-  'TROCA PENDENTE': { label: 'Troca Pendente', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
-  'EM ESTOQUE': { label: 'Em Estoque', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+  'Em uso': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  'Manutenção': { label: 'Manutenção', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  'Defeito': { label: 'Defeito', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  'Troca pendente': { label: 'Troca Pendente', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
+  'Em estoque': { label: 'Em Estoque', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
 };
 
 export const Computers = () => {
@@ -52,6 +52,7 @@ export const Computers = () => {
 
   const [isExporting, setIsExporting] = useState(false);
 
+  // Estados para importação em lote
   const [parsedComputers, setParsedComputers] = useState<ComputerInput[]>([]);
   const [bulkErrors, setBulkErrors] = useState<{ row: number; errors: string[] }[]>([]);
   const [isParsing, setIsParsing] = useState(false);
@@ -91,15 +92,17 @@ export const Computers = () => {
         patrimonio: computer.patrimonio,
         hostname: computer.hostname,
         status: computer.status,
-        location: computer.location,
+        localizacao: computer.localizacao,
+        observacoes: computer.observacoes || '',
       });
     } else {
       setSelectedComputer(null);
       reset({
         patrimonio: '',
         hostname: '',
-        status: 'EM ESTOQUE',
-        location: '',
+        status: 'Em estoque',
+        localizacao: '',
+        observacoes: '',
       });
     }
     setIsModalOpen(true);
@@ -166,18 +169,31 @@ export const Computers = () => {
 
           const rawPatrimonio = String(row['PATRIMÔNIO'] || '').trim();
           const rawHostname = String(row['HOSTNAME'] || '').trim();
-          const rawStatus = String(row['STATUS'] || '').trim().toUpperCase();
+          const rawStatusInput = String(row['STATUS'] || '').trim();
           const rawLocation = String(row['LOCALIZAÇÃO'] || '').trim();
+          const rawObs = String(row['OBSERVAÇÕES'] || '').trim();
+          
+          const formatStatus = (s: string): ComputerStatus => {
+            const lower = s.toLowerCase();
+            if (lower === 'em uso') return 'Em uso';
+            if (lower === 'manutenção' || lower === 'manutencao') return 'Manutenção';
+            if (lower === 'defeito') return 'Defeito';
+            if (lower === 'troca pendente') return 'Troca pendente';
+            if (lower === 'em estoque') return 'Em estoque';
+            return s as any;
+          };
+
+          const rawStatus = formatStatus(rawStatusInput);
 
           if (!rawPatrimonio) rowErrors.push('PATRIMÔNIO é obrigatório');
           if (!rawHostname) rowErrors.push('HOSTNAME é obrigatório');
           if (!rawLocation) rowErrors.push('LOCALIZAÇÃO é obrigatória');
           
-          const validStatuses = ['EM USO', 'MANUTENCAO', 'DEFEITO', 'TROCA PENDENTE', 'EM ESTOQUE'];
-          if (!rawStatus) {
+          const validStatuses = ['Em uso', 'Manutenção', 'Defeito', 'Troca pendente', 'Em estoque'];
+          if (!rawStatusInput) {
             rowErrors.push('STATUS é obrigatório');
           } else if (!validStatuses.includes(rawStatus)) {
-            rowErrors.push(`STATUS inválido: ${rawStatus}`);
+            rowErrors.push(`STATUS inválido: ${rawStatusInput}`);
           }
 
           if (rowErrors.length > 0) {
@@ -186,8 +202,9 @@ export const Computers = () => {
             results.push({
               patrimonio: rawPatrimonio,
               hostname: rawHostname,
-              status: rawStatus as any,
-              location: rawLocation,
+              status: rawStatus,
+              localizacao: rawLocation,
+              observacoes: rawObs || null,
             });
           }
         });
@@ -253,7 +270,7 @@ export const Computers = () => {
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col md:flex-col gap-4">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative group w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary-400 transition-colors" size={18} />
           <input
@@ -264,6 +281,7 @@ export const Computers = () => {
             onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
+
         <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm w-full md:w-auto">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4 border-r border-border-primary pr-6">
@@ -303,7 +321,6 @@ export const Computers = () => {
         </div>
       </div>
 
-
       {/* Tabela */}
       <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
         <div className="overflow-x-auto">
@@ -330,8 +347,8 @@ export const Computers = () => {
                     <td className="px-6 py-4 flex justify-end gap-2"><Skeleton className="h-8 w-8" /><Skeleton className="h-8 w-8" /></td>
                   </tr>
                 ))
-              ) : computersData?.computadores && computersData.computadores.length > 0 ? (
-                computersData.computadores.map((comp) => (
+              ) : computersData?.computers && computersData.computers.length > 0 ? (
+                computersData.computers.map((comp) => (
                   <tr key={comp.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0">
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">
                       <span className="px-2 py-1 rounded bg-hover-bg border border-border-primary font-mono text-xs">
@@ -344,7 +361,7 @@ export const Computers = () => {
                         {STATUS_LABELS[comp.status].label}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{comp.location}</td>
+                    <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{comp.localizacao}</td>
                     <td className="px-6 py-4 text-right text-[10px] font-mono text-text-secondary uppercase">
                       {new Date(comp.updatedAt).toLocaleDateString()}
                     </td>
@@ -454,10 +471,18 @@ export const Computers = () => {
             <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Localização</label>
             <input 
               type="text" 
-              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.location ? 'border-red-500' : 'border-border-primary'}`} 
-              {...register('location')} 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.localizacao ? 'border-red-500' : 'border-border-primary'}`} 
+              {...register('localizacao')} 
             />
-            {errors.location && <span className="text-[10px] text-red-500 font-mono">{errors.location.message}</span>}
+            {errors.localizacao && <span className="text-[10px] text-red-500 font-mono">{errors.localizacao.message}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações</label>
+            <textarea 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none" 
+              {...register('observacoes')} 
+            />
           </div>
 
           <div className="flex gap-4 pt-4">
@@ -486,6 +511,51 @@ export const Computers = () => {
         title="Importar Computadores (.xlsx)"
       >
         <div className="space-y-6">
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Como usar:</h4>
+              <ol className="space-y-2">
+                {[
+                  'Prepare um arquivo Excel (.xlsx) com os dados',
+                  'Selecione importar',
+                  'Clique no campo acima ou arraste o arquivo',
+                  'Clique em Validar para verificar se os dados estão corretos',
+                  'Se tudo estiver OK, clique em Importar para inserir no banco',
+                  'Após importar, os dados aparecem na página de Computadores'
+                ].map((step, i) => (
+                  <li key={i} className="text-[10px] font-mono text-text-secondary flex gap-3 leading-relaxed">
+                    <span className="text-primary-400 font-bold">{i+1}.</span> {step}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Formato da Planilha:</h4>
+              <p className="text-[10px] font-mono text-text-primary font-bold tracking-widest bg-surface px-3 py-2 rounded-lg border border-border-primary">
+                PATRIMÔNIO | HOSTNAME | STATUS | LOCALIZAÇÃO | OBSERVAÇÕES
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-primary-500/5 border border-primary-500/10">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Dicas:</h4>
+              <ul className="space-y-1">
+                {[
+                  'Tamanho máximo do arquivo: 5 MB',
+                  'Formato suportado: Excel (.xlsx) apenas',
+                  'Cada planilha deve ter uma aba \'computadores\'',
+                  'Validação ocorre antes da importação para evitar erros',
+                  'A importação não pode ser desfeita, então valide bem antes de importar!',
+                  'Você pode importar headsets e computadores em arquivos separados ou no mesmo arquivo'
+                ].map((tip, i) => (
+                  <li key={i} className="text-[10px] font-mono text-text-secondary flex gap-2 before:content-['•'] before:text-primary-400">
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
           <form onSubmit={onBulkSubmit} className="space-y-6">
             <div className="space-y-2">
               <div className="relative group">
@@ -566,7 +636,7 @@ export const Computers = () => {
                     <span className={`px-2 py-0.5 rounded-full font-bold border ${STATUS_LABELS[entry.newStatus]?.color}`}>{STATUS_LABELS[entry.newStatus]?.label}</span>
                     <span className="text-text-secondary uppercase font-mono">{new Date(entry.createdAt).toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-text-primary font-mono"><MapPin size={14} className="text-primary-400" /> {entry.newLocation}</div>
+                  <div className="flex items-center gap-2 text-text-primary font-mono"><MapPin size={14} className="text-primary-400" /> {entry.newLocalizacao}</div>
                   <div className="flex items-center gap-1.5 font-mono text-text-secondary/60 uppercase"><User size={12} /> Modificado por: {entry.user?.name || 'Sistema'}</div>
                 </div>
               </div>
