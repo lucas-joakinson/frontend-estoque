@@ -40,6 +40,8 @@ const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
 
 const RESTRICTED_STATUSES = ['EM_MANUTENCAO', 'DEFEITO', 'DISPONIVEL'];
 
+const DEFAULT_STATUS = { label: 'Desconhecido', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' };
+
 export const Headsets = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -529,8 +531,8 @@ export const Headsets = () => {
                     <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.numeroSerie || '---'}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[headset.status].color}`}>
-                        {STATUS_LABELS[headset.status].label}
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${(STATUS_LABELS[headset.status] || DEFAULT_STATUS).color}`}>
+                        {(STATUS_LABELS[headset.status] || DEFAULT_STATUS).label}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-[10px] font-mono text-text-secondary uppercase">
@@ -898,10 +900,10 @@ export const Headsets = () => {
           ) : headsetHistory && headsetHistory.length > 0 ? (
             headsetHistory.map((entry, i) => (
               <div key={entry.id} className={`relative pl-8 ${i !== headsetHistory.length - 1 ? 'pb-8 border-l border-border-primary' : ''}`}>
-                <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${STATUS_LABELS[entry.newStatus]?.color.split(' ')[0] || 'bg-primary-500'}`} />
+                <div className={`absolute left-[-5px] top-0 w-2.5 h-2.5 rounded-full ${(STATUS_LABELS[entry.newStatus] || DEFAULT_STATUS).color.split(' ')[0] || 'bg-primary-500'}`} />
                 <div className="flex flex-col gap-3 p-4 rounded-2xl bg-hover-bg border border-border-primary text-xs">
                   <div className="flex items-center justify-between">
-                    <span className={`px-2 py-0.5 rounded-full font-bold border ${STATUS_LABELS[entry.newStatus]?.color}`}>{STATUS_LABELS[entry.newStatus]?.label}</span>
+                    <span className={`px-2 py-0.5 rounded-full font-bold border ${(STATUS_LABELS[entry.newStatus] || DEFAULT_STATUS).color}`}>{(STATUS_LABELS[entry.newStatus] || DEFAULT_STATUS).label}</span>
                     <span className="text-text-secondary uppercase font-mono">{new Date(entry.createdAt).toLocaleString()}</span>
                   </div>
                   {entry.observation && <div className="p-3 rounded-xl bg-surface/50 border border-border-primary italic text-text-secondary">"{entry.observation}"</div>}
