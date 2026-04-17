@@ -5,7 +5,7 @@ import {
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
   History, User, ClipboardList,
-  PackagePlus, Download, X, Settings2, UserMinus
+  PackagePlus, Download, X, Settings2, UserMinus, UserPlus
 } from 'lucide-react';
 
 import { useHeadsets, useHeadsetHistory } from '../hooks/useHeadsets';
@@ -54,6 +54,9 @@ export const Headsets = () => {
   const [headsetForHistory, setHeadsetForHistory] = useState<Headset | null>(null);
   const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
   const [disconnectStatus, setDisconnectStatus] = useState<'DISPONIVEL' | 'DEFEITO'>('DISPONIVEL');
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [connectMatricula, setConnectMatricula] = useState('');
+  const [connectObservacoes, setConnectObservacoes] = useState('');
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -244,6 +247,36 @@ export const Headsets = () => {
       },
       onError: (error: any) => {
         toast.error(error.response?.data?.message || 'Erro ao desvincular operador', { id: toastId });
+      }
+    });
+  };
+
+  const handleConnect = () => {
+    if (!selectedHeadset || !connectMatricula.trim()) {
+      toast.error('Por favor, informe a matrícula do operador.');
+      return;
+    }
+    
+    const toastId = toast.loading('Vinculando operador...');
+    const finalObs = `Headset vinculado a matrícula ${connectMatricula.trim()}${connectObservacoes.trim() ? `. ${connectObservacoes.trim()}` : ''}`;
+    
+    updateHeadset({ 
+      id: selectedHeadset.id, 
+      data: { 
+        matricula: connectMatricula.trim(), 
+        status: 'EM_USO',
+        observacoes: finalObs
+      } 
+    }, {
+      onSuccess: () => {
+        toast.success('Operador vinculado com sucesso!', { id: toastId });
+        setIsConnectModalOpen(false);
+        setSelectedHeadset(null);
+        setConnectMatricula('');
+        setConnectObservacoes('');
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao vincular operador', { id: toastId });
       }
     });
   };
@@ -538,7 +571,7 @@ export const Headsets = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
-                        {headset.matricula && (
+                        {headset.matricula ? (
                           <button 
                             onClick={() => { setSelectedHeadset(headset); setIsDisconnectModalOpen(true); }} 
                             className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-zinc-100 hover:bg-zinc-800 transition-all"
@@ -546,6 +579,16 @@ export const Headsets = () => {
                           >
                             <UserMinus size={14} />
                           </button>
+                        ) : (
+                          headset.status === 'DISPONIVEL' && (
+                            <button 
+                              onClick={() => { setSelectedHeadset(headset); setIsConnectModalOpen(true); }} 
+                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-emerald-400 hover:bg-emerald-500/5 transition-all"
+                              title="Vincular Operador"
+                            >
+                              <UserPlus size={14} />
+                            </button>
+                          )
                         )}
                         <button 
                           onClick={() => { setHeadsetForHistory(headset); setIsHistoryModalOpen(true); }} 
@@ -967,6 +1010,60 @@ export const Headsets = () => {
             </button>
             <button 
               onClick={handleDisconnect}
+              disabled={isUpdating}
+              className="flex-1 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12"
+            >
+              {isUpdating ? <Spinner /> : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Vincular Operador */}
+      <Modal 
+        isOpen={isConnectModalOpen} 
+        onClose={() => setIsConnectModalOpen(false)} 
+        title="Vincular Operador"
+      >
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-primary-500/5 border border-primary-500/10">
+            <p className="text-xs font-mono text-primary-400 uppercase leading-relaxed text-center">
+              Vinculando operador ao headset lacre <span className="font-bold">{selectedHeadset?.lacre}</span>.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula do Operador</label>
+              <input 
+                type="text" 
+                placeholder="Ex: 123456"
+                value={connectMatricula}
+                onChange={(e) => setConnectMatricula(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações Adicionais (Opcional)</label>
+              <textarea 
+                placeholder="Alguma observação extra?"
+                value={connectObservacoes}
+                onChange={(e) => setConnectObservacoes(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 min-h-[100px] resize-none" 
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-2">
+            <button 
+              onClick={() => setIsConnectModalOpen(false)}
+              className="flex-1 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary font-mono font-bold uppercase tracking-wider transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleConnect}
               disabled={isUpdating}
               className="flex-1 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12"
             >
