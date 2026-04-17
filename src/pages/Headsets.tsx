@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { 
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
   History, User, ClipboardList,
-  PackagePlus, Download, X, Settings2
+  PackagePlus, Download, X, Settings2, UserMinus
 } from 'lucide-react';
 
 // Hooks
@@ -30,10 +30,12 @@ import { headsetSchema, type HeadsetInput } from '../schemas/headset.schema';
 import type { Headset, HeadsetStatus } from '../types';
 
 const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
-  'EM USO': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  'EM_USO': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
   'RESERVA': { label: 'Reserva', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  'TROCA PENDENTE': { label: 'Troca Pendente', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  'DESLIGADO': { label: 'Desligado', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  'TROCA_PENDENTE': { label: 'Troca Pendente', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+  'EM_MANUTENCAO': { label: 'Em Manutenção', color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
+  'DEFEITO': { label: 'Defeito', color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  'DISPONIVEL': { label: 'Disponível', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
 };
 
 export const Headsets = () => {
@@ -50,6 +52,8 @@ export const Headsets = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [headsetForHistory, setHeadsetForHistory] = useState<Headset | null>(null);
+  const [isDisconnectModalOpen, setIsDisconnectModalOpen] = useState(false);
+  const [disconnectStatus, setDisconnectStatus] = useState<'DISPONIVEL' | 'DEFEITO'>('DISPONIVEL');
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -83,10 +87,21 @@ export const Headsets = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<HeadsetInput>({
     resolver: zodResolver(headsetSchema),
   });
+
+  const watchedMatricula = watch('matricula');
+
+  // Automação: Se preencher a matrícula, muda o status para EM_USO
+  useEffect(() => {
+    if (watchedMatricula && watchedMatricula.trim().length > 0) {
+      setValue('status', 'EM_USO');
+    }
+  }, [watchedMatricula, setValue]);
 
   const toggleSelectAllHeadsets = () => {
     if (selectedHeadsetIds.length === (headsetsData?.headsets.length || 0)) {
@@ -191,6 +206,26 @@ export const Headsets = () => {
     }
   };
 
+  const handleDisconnect = async () => {
+    if (!selectedHeadset) return;
+    
+    const toastId = toast.loading('Desvinculando operador...');
+    try {
+      await updateHeadset({ 
+        id: selectedHeadset.id, 
+        data: { 
+          matricula: null, 
+          status: disconnectStatus,
+          observacoes: `Operador desligado. Equipamento definido como ${STATUS_LABELS[disconnectStatus].label}.`
+        } 
+      });
+      setIsDisconnectModalOpen(false);
+      setSelectedHeadset(null);
+    } catch (error) {
+      toast.error('Erro ao desvincular operador.', { id: toastId });
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -233,11 +268,10 @@ export const Headsets = () => {
           const rawLacre = String(row['LACRE'] || '').trim();
           const rawMarca = String(row['MARCA'] || '').trim();
           const rawSerie = String(row['Nº SÉRIE'] || '').trim();
-          const rawStatus = String(row['STATUS'] || '').trim().toUpperCase();
+          const rawStatus = String(row['STATUS'] || '').trim().toUpperCase().replace(/ /g, '_');
           const rawObs = String(row['OBSERVAÇÕES'] || '').trim();
 
           // Validação
-          if (!rawMatricula) rowErrors.push('MATRÍCULA é obrigatória');
           if (!rawLacre) {
             rowErrors.push('LACRE é obrigatório');
           } else if (rawLacre.length > 5) {
@@ -248,11 +282,11 @@ export const Headsets = () => {
           
           if (!rawMarca) rowErrors.push('MARCA é obrigatória');
           
-          const validStatuses = ['EM USO', 'RESERVA', 'TROCA PENDENTE', 'DESLIGADO'];
+          const validStatuses = ['EM_USO', 'RESERVA', 'TROCA_PENDENTE', 'EM_MANUTENCAO', 'DEFEITO', 'DISPONIVEL'];
           if (!rawStatus) {
             rowErrors.push('STATUS é obrigatório');
           } else if (!validStatuses.includes(rawStatus)) {
-            rowErrors.push(`STATUS inválido: ${rawStatus}. Use: EM USO, RESERVA, TROCA PENDENTE ou DESLIGADO`);
+            rowErrors.push(`STATUS inválido: ${rawStatus}. Use: EM USO, RESERVA, TROCA PENDENTE, EM MANUTENCAO, DEFEITO ou DISPONIVEL`);
           }
 
           if (rowErrors.length > 0) {
@@ -260,7 +294,7 @@ export const Headsets = () => {
           } else {
             lacresInSheet.add(rawLacre);
             results.push({
-              matricula: rawMatricula,
+              matricula: rawMatricula || null,
               lacre: rawLacre,
               marca: rawMarca,
               numeroSerie: rawSerie || null,
@@ -446,7 +480,9 @@ export const Headsets = () => {
                         onChange={() => toggleSelectOneHeadset(headset.id)} 
                       />
                     </td>
-                    <td className="px-6 py-4 text-sm font-bold text-text-primary">{headset.matricula}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-text-primary">
+                      {headset.matricula || <span className="text-text-secondary/40 font-mono text-xs uppercase italic">---</span>}
+                    </td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.lacre}</td>
                     <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.numeroSerie || '---'}</td>
@@ -460,6 +496,15 @@ export const Headsets = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
+                        {headset.matricula && (
+                          <button 
+                            onClick={() => { setSelectedHeadset(headset); setIsDisconnectModalOpen(true); }} 
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-zinc-100 hover:bg-zinc-800 transition-all"
+                            title="Desligar Operador"
+                          >
+                            <UserMinus size={14} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => { setHeadsetForHistory(headset); setIsHistoryModalOpen(true); }} 
                           className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-amber-400 transition-all"
@@ -824,6 +869,60 @@ export const Headsets = () => {
         description={`Tem certeza que deseja remover o headset da matrícula ${selectedHeadset?.matricula}?`} 
       />
       <ConfirmDialog isOpen={isBulkDeleteConfirmOpen} onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)} onConfirm={handleBulkDelete} title={`Excluir ${selectedHeadsetIds.length} Headsets`} description="Remover permanentemente os headsets selecionados?" />
+
+      {/* Modal Desvincular Operador */}
+      <Modal 
+        isOpen={isDisconnectModalOpen} 
+        onClose={() => setIsDisconnectModalOpen(false)} 
+        title="Desvincular Operador"
+      >
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20">
+            <p className="text-xs font-mono text-amber-400 uppercase leading-relaxed text-center">
+              Você está desvinculando o headset da matrícula <span className="font-bold">{selectedHeadset?.matricula}</span>.
+              Para qual estado este equipamento deve ir?
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <button 
+              onClick={() => setDisconnectStatus('DISPONIVEL')}
+              className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 ${disconnectStatus === 'DISPONIVEL' ? 'bg-zinc-500/10 border-zinc-500/50 text-zinc-400' : 'bg-hover-bg border-border-primary text-text-secondary hover:border-zinc-500/30'}`}
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${disconnectStatus === 'DISPONIVEL' ? 'bg-zinc-500/20' : 'bg-surface'}`}>
+                <PackagePlus size={20} />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Disponível</span>
+            </button>
+
+            <button 
+              onClick={() => setDisconnectStatus('DEFEITO')}
+              className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 ${disconnectStatus === 'DEFEITO' ? 'bg-red-500/10 border-red-500/50 text-red-400' : 'bg-hover-bg border-border-primary text-text-secondary hover:border-red-500/30'}`}
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${disconnectStatus === 'DEFEITO' ? 'bg-red-500/20' : 'bg-surface'}`}>
+                <Trash2 size={20} />
+              </div>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest">Defeito</span>
+            </button>
+          </div>
+
+          <div className="flex gap-4 pt-2">
+            <button 
+              onClick={() => setIsDisconnectModalOpen(false)}
+              className="flex-1 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary font-mono font-bold uppercase tracking-wider transition-all"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={handleDisconnect}
+              disabled={isUpdating}
+              className="flex-1 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12"
+            >
+              {isUpdating ? <Spinner /> : 'Confirmar'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

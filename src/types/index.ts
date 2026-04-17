@@ -113,11 +113,11 @@ export interface AssetsResponse {
   };
 }
 
-export type HeadsetStatus = 'EM USO' | 'RESERVA' | 'TROCA PENDENTE' | 'DESLIGADO';
+export type HeadsetStatus = 'EM_USO' | 'RESERVA' | 'TROCA_PENDENTE' | 'EM_MANUTENCAO' | 'DEFEITO' | 'DISPONIVEL';
 
 export interface Headset {
   id: string;
-  matricula: string;
+  matricula: string | null;
   lacre: string;
   marca: string;
   numeroSerie?: string | null;
