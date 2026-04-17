@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const headsetSchema = z.object({
-  matricula: z.string().optional().nullable(),
+  matricula: z.string().nullable(),
   lacre: z.string().min(1, 'O lacre é obrigatório').max(5, 'O lacre deve ter no máximo 5 caracteres'),
   marca: z.string().min(1, 'A marca é obrigatória'),
   numeroSerie: z.string().optional().nullable(),

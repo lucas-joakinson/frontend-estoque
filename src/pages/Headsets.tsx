@@ -38,6 +38,8 @@ const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
   'DISPONIVEL': { label: 'Disponível', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20' },
 };
 
+const RESTRICTED_STATUSES = ['EM_MANUTENCAO', 'DEFEITO', 'DISPONIVEL'];
+
 export const Headsets = () => {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -95,13 +97,23 @@ export const Headsets = () => {
   });
 
   const watchedMatricula = watch('matricula');
+  const watchedStatus = watch('status');
 
-  // Automação: Se preencher a matrícula, muda o status para EM_USO
+  // Automação: Se preencher a matrícula, muda o status para EM_USO (se estiver num status restrito)
   useEffect(() => {
     if (watchedMatricula && watchedMatricula.trim().length > 0) {
-      setValue('status', 'EM_USO');
+      if (RESTRICTED_STATUSES.includes(watchedStatus)) {
+        setValue('status', 'EM_USO');
+      }
     }
-  }, [watchedMatricula, setValue]);
+  }, [watchedMatricula, watchedStatus, setValue]);
+
+  // Limpa matrícula se o status for alterado para um restrito
+  useEffect(() => {
+    if (RESTRICTED_STATUSES.includes(watchedStatus)) {
+      setValue('matricula', '');
+    }
+  }, [watchedStatus, setValue]);
 
   const toggleSelectAllHeadsets = () => {
     if (selectedHeadsetIds.length === (headsetsData?.headsets.length || 0)) {
@@ -122,7 +134,13 @@ export const Headsets = () => {
     try {
       for (const id of selectedHeadsetIds) {
         const data: any = {};
-        if (bulkData.status) data.status = bulkData.status;
+        if (bulkData.status) {
+          data.status = bulkData.status;
+          // Se o novo status for restrito, limpa a matrícula
+          if (RESTRICTED_STATUSES.includes(bulkData.status)) {
+            data.matricula = null;
+          }
+        }
         if (bulkData.observacoes) data.observacoes = bulkData.observacoes;
 
         await headsetService.updateHeadset(id, data);
@@ -196,11 +214,11 @@ export const Headsets = () => {
 
   const onSubmit = (data: HeadsetInput) => {
     if (selectedHeadset) {
-      updateHeadset({ id: selectedHeadset.id, data }, {
+      updateHeadset({ id: selectedHeadset.id, data: data as any }, {
         onSuccess: () => setIsModalOpen(false),
       });
     } else {
-      createHeadset(data, {
+      createHeadset(data as any, {
         onSuccess: () => setIsModalOpen(false),
       });
     }
@@ -258,6 +276,8 @@ export const Headsets = () => {
         const results: HeadsetInput[] = [];
         const errorsList: { row: number; errors: string[] }[] = [];
         const lacresInSheet = new Set<string>();
+        const matriculasInSheet = new Set<string>();
+        const seriesInSheet = new Set<string>();
 
         data.forEach((row, index) => {
           const rowNum = index + 2;
@@ -271,7 +291,7 @@ export const Headsets = () => {
           const rawStatus = String(row['STATUS'] || '').trim().toUpperCase().replace(/ /g, '_');
           const rawObs = String(row['OBSERVAÇÕES'] || '').trim();
 
-          // Validação
+          // Validação de Lacre
           if (!rawLacre) {
             rowErrors.push('LACRE é obrigatório');
           } else if (rawLacre.length > 5) {
@@ -280,6 +300,20 @@ export const Headsets = () => {
             rowErrors.push(`LACRE duplicado na planilha: ${rawLacre}`);
           }
           
+          // Validação de Matrícula
+          if (rawMatricula) {
+            if (matriculasInSheet.has(rawMatricula)) {
+              rowErrors.push(`MATRÍCULA duplicada na planilha: ${rawMatricula}`);
+            }
+          }
+
+          // Validação de Nº Série
+          if (rawSerie) {
+            if (seriesInSheet.has(rawSerie)) {
+              rowErrors.push(`Nº SÉRIE duplicado na planilha: ${rawSerie}`);
+            }
+          }
+
           if (!rawMarca) rowErrors.push('MARCA é obrigatória');
           
           const validStatuses = ['EM_USO', 'RESERVA', 'TROCA_PENDENTE', 'EM_MANUTENCAO', 'DEFEITO', 'DISPONIVEL'];
@@ -289,10 +323,18 @@ export const Headsets = () => {
             rowErrors.push(`STATUS inválido: ${rawStatus}. Use: EM USO, RESERVA, TROCA PENDENTE, EM MANUTENCAO, DEFEITO ou DISPONIVEL`);
           }
 
+          // Validação de Regra de Negócio: Status Restrito vs Matrícula
+          if (RESTRICTED_STATUSES.includes(rawStatus) && rawMatricula) {
+            rowErrors.push(`Status ${rawStatus} não pode ter matrícula vinculada.`);
+          }
+
           if (rowErrors.length > 0) {
             errorsList.push({ row: rowNum, errors: rowErrors });
           } else {
             lacresInSheet.add(rawLacre);
+            if (rawMatricula) matriculasInSheet.add(rawMatricula);
+            if (rawSerie) seriesInSheet.add(rawSerie);
+            
             results.push({
               matricula: rawMatricula || null,
               lacre: rawLacre,
@@ -635,13 +677,24 @@ export const Headsets = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula</label>
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">
+                Matrícula {RESTRICTED_STATUSES.includes(watchedStatus) && (
+                  <span className="text-[10px] text-amber-500 lowercase normal-case font-normal ml-1">(desabilitado para este status)</span>
+                )}
+              </label>
               <input 
                 type="text" 
-                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.matricula ? 'border-red-500' : 'border-border-primary'}`} 
+                disabled={RESTRICTED_STATUSES.includes(watchedStatus)}
+                placeholder={RESTRICTED_STATUSES.includes(watchedStatus) ? "Indisponível" : ""}
+                className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${errors.matricula ? 'border-red-500' : 'border-border-primary'} ${RESTRICTED_STATUSES.includes(watchedStatus) ? 'opacity-50 cursor-not-allowed' : ''}`} 
                 {...register('matricula')} 
               />
               {errors.matricula && <span className="text-[10px] text-red-500 font-mono">{errors.matricula.message}</span>}
+              {RESTRICTED_STATUSES.includes(watchedStatus) && (
+                <p className="text-[9px] text-amber-500/80 font-mono leading-tight">
+                  Equipamentos em manutenção, com defeito ou disponíveis não podem possuir matrícula vinculada.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Lacre</label>
