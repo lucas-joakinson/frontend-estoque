@@ -44,6 +44,8 @@ export const Headsets = () => {
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   const debouncedSearch = useDebounce(search, 500);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,7 +84,7 @@ export const Headsets = () => {
     updateHeadset, 
     isUpdating, 
     deleteHeadset 
-  } = useHeadsets(page, limit, debouncedSearch, statusFilter);
+  } = useHeadsets(page, limit, debouncedSearch, statusFilter, sortBy, order as 'asc' | 'desc');
 
   const { data: headsetHistory, isLoading: isLoadingHistory } = useHeadsetHistory(headsetForHistory?.id || null);
 
@@ -497,9 +499,38 @@ export const Headsets = () => {
                 ))}
               </select>
             </div>
-            {(search || statusFilter) && (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-text-secondary">
+                <SlidersHorizontal size={14} className="text-primary-400" />
+                <span className="text-xs font-mono uppercase tracking-widest">Ordem:</span>
+              </div>
+              <select 
+                value={`${sortBy}-${order}`} 
+                onChange={(e) => {
+                  const [newSortBy, newOrder] = e.target.value.split('-');
+                  setSortBy(newSortBy);
+                  setOrder(newOrder as 'asc' | 'desc');
+                  setPage(1);
+                }} 
+                className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
+              >
+                <option value="createdAt-desc">Mais Recentes</option>
+                <option value="createdAt-asc">Mais Antigos</option>
+                <option value="lacre-asc">Lacre (A-Z)</option>
+                <option value="marca-asc">Marca (A-Z)</option>
+                <option value="matricula-asc">Matrícula (A-Z)</option>
+              </select>
+            </div>
+            {(search || statusFilter || sortBy !== 'createdAt' || order !== 'desc') && (
               <button 
-                onClick={() => { setSearch(''); setStatusFilter(''); setPage(1); setSelectedHeadsetIds([]); }} 
+                onClick={() => { 
+                  setSearch(''); 
+                  setStatusFilter(''); 
+                  setSortBy('createdAt');
+                  setOrder('desc');
+                  setPage(1); 
+                  setSelectedHeadsetIds([]); 
+                }} 
                 className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
               >
                 Limpar Filtros

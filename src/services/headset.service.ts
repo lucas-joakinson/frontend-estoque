@@ -2,9 +2,16 @@ import api from '../lib/api';
 import type { Headset, HeadsetsResponse, HeadsetHistory } from '../types';
 
 export const headsetService = {
-  async listHeadsets(page = 1, limit = 10, search = '', status?: string): Promise<HeadsetsResponse> {
+  async listHeadsets(
+    page = 1, 
+    limit = 10, 
+    search = '', 
+    status?: string,
+    sortBy?: string,
+    order?: 'asc' | 'desc'
+  ): Promise<HeadsetsResponse> {
     const response = await api.get('/headsets', {
-      params: { page, limit, search, status },
+      params: { page, limit, search, status, sortBy, order },
     });
     return response.data;
   },

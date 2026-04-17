@@ -7,14 +7,16 @@ export const useHeadsets = (
   page = 1, 
   limit = 10, 
   search = '', 
-  status?: string
+  status?: string,
+  sortBy?: string,
+  order?: 'asc' | 'desc'
 ) => {
   const queryClient = useQueryClient();
 
   const headsetsQuery = useQuery({
-    queryKey: ['headsets', page, limit, search, status],
+    queryKey: ['headsets', page, limit, search, status, sortBy, order],
     queryFn: async () => {
-      const response = await headsetService.listHeadsets(page, limit, search, status);
+      const response = await headsetService.listHeadsets(page, limit, search, status, sortBy, order);
       return response;
     },
     placeholderData: (previousData) => previousData,
