@@ -493,7 +493,6 @@ export const Users = () => {
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in slide-in-from-bottom-4 duration-500">
-          {/* Menu Lateral de Cargos (Dinâmico) */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-surface border border-border-primary rounded-3xl p-6 space-y-4 shadow-sm">
               <h3 className="text-[10px] font-mono text-text-secondary uppercase tracking-[0.2em] ml-2">Cargos Disponíveis</h3>
@@ -533,7 +532,6 @@ export const Users = () => {
             </div>
           </div>
 
-          {/* Lista de Permissões */}
           <div className="lg:col-span-3 space-y-6">
             <div className="bg-surface border border-border-primary rounded-3xl p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
@@ -604,7 +602,6 @@ export const Users = () => {
         </div>
       )}
 
-      {/* Modal Novo Cargo */}
       <Modal isOpen={isNewRoleModalOpen} onClose={() => setIsNewRoleModalOpen(false)} title="Novo Cargo">
         <div className="space-y-6">
           <div className="space-y-2">
@@ -630,7 +627,6 @@ export const Users = () => {
         </div>
       </Modal>
 
-      {/* Modal Novo Usuário */}
       <Modal isOpen={isNewUserModalOpen} onClose={() => setIsNewUserModalOpen(false)} title="Novo Usuário">
         <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
           <div className="space-y-2">
@@ -686,7 +682,6 @@ export const Users = () => {
         </form>
       </Modal>
 
-      {/* Modal Editar Usuário */}
       <Modal isOpen={isEditUserModalOpen} onClose={() => setIsEditUserModalOpen(false)} title={`Editar: ${selectedUser?.name}`}>
         <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
           <div className="space-y-2">

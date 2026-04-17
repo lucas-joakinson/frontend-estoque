@@ -9,26 +9,22 @@ import {
   X, Settings2, SlidersHorizontal, Tag, ClipboardList 
 } from 'lucide-react';
 
-// Hooks
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
 import { useAssets, useAssetHistory } from '../hooks/useAssets';
 import { useAuth } from '../hooks/useAuth';
 import { useDebounce } from '../hooks/useDebounce';
 
-// UI Components
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 
-// Services & Schemas
 import { assetService } from '../services/asset.service';
 import { createProductSchema, type CreateProductInput } from '../schemas/product.schema';
 import { categorySchema, type CategoryInput } from '../schemas/category.schema';
 import { createAssetSchema, updateAssetSchema, type CreateAssetInput, type UpdateAssetInput } from '../schemas/asset.schema';
 
-// Types
 import type { Product, Asset, AssetStatus } from '../types';
 
 const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
@@ -50,7 +46,6 @@ export const Inventory = () => {
   const canManageCategories = hasPermission('canManageCategories');
   const canDelete = hasPermission('canDeleteItems');
 
-  // --- LOGIC: ASSETS (PATRIMÔNIO) ---
   const [assetPage, setAssetPage] = useState(1);
   const [assetLimit, setAssetLimit] = useState(10);
   const [assetSearch, setAssetSearch] = useState('');
@@ -260,7 +255,6 @@ export const Inventory = () => {
     } finally { setIsProcessingBulk(false); }
   };
 
-  // --- LOGIC: PRODUCTS (ITENS/MODELOS) ---
   const [productPage, setProductPage] = useState(1);
   const [productLimit, setProductLimit] = useState(10);
   const [productSearch, setProductSearch] = useState('');
@@ -304,7 +298,6 @@ export const Inventory = () => {
     });
   };
 
-  // --- LOGIC: CATEGORIES ---
   const [catPage, setCatPage] = useState(1);
   const [catLimit, setCatLimit] = useState(10);
   const [catSearch, setCatSearch] = useState('');
@@ -362,7 +355,6 @@ export const Inventory = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-      {/* Header Unificado com Abas */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-text-primary leading-tight">
@@ -400,7 +392,6 @@ export const Inventory = () => {
         </div>
       </div>
 
-      {/* --- ABA ATIVOS --- */}
       {activeTab === 'assets' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -522,8 +513,8 @@ export const Inventory = () => {
                         </td>
                         <td className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase">{asset.product?.category?.name || 'Sem Categoria'}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[asset.status].color}`}>
-                            {STATUS_LABELS[asset.status].label}
+                          <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[asset.status]?.color || 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
+                            {STATUS_LABELS[asset.status]?.label || 'Desconhecido'}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -559,7 +550,6 @@ export const Inventory = () => {
         </>
       )}
 
-      {/* --- ABA ITENS (MODELOS) --- */}
       {activeTab === 'products' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -670,7 +660,6 @@ export const Inventory = () => {
         </>
       )}
 
-      {/* --- ABA CATEGORIAS --- */}
       {activeTab === 'categories' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -773,7 +762,6 @@ export const Inventory = () => {
         </>
       )}
 
-      {/* --- MODALS ATIVOS --- */}
       <Modal isOpen={isAssetCreateModalOpen} onClose={() => setIsAssetCreateModalOpen(false)} title="Novo Ativo (Patrimônio)">
         <form onSubmit={handleSubmitAssetCreate(onAssetCreateSubmit)} className="space-y-4">
           <div className="space-y-2">
@@ -934,7 +922,6 @@ export const Inventory = () => {
         </div>
       </Modal>
 
-      {/* --- MODALS ITENS --- */}
       <Modal isOpen={isProductModalOpen} onClose={() => setIsProductModalOpen(false)} title="Novo Modelo de Item">
         <form onSubmit={handleSubmitProduct(onProductSubmit)} className="space-y-4">
           <div className="space-y-2">
@@ -958,7 +945,6 @@ export const Inventory = () => {
         </form>
       </Modal>
 
-      {/* --- MODALS CATEGORIAS --- */}
       <Modal isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} title={selectedCategory ? 'Editar Categoria' : 'Nova Categoria'}>
         <form onSubmit={handleSubmitCat(onCatSubmit)} className="space-y-6">
           <div className="space-y-2">
@@ -969,7 +955,6 @@ export const Inventory = () => {
         </form>
       </Modal>
 
-      {/* Ações em Massa */}
       {selectedAssetIds.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
           <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
@@ -1007,8 +992,6 @@ export const Inventory = () => {
           </button>
         </div>
       </Modal>
-
-      {/* CONFIRMS */}
       <ConfirmDialog isOpen={isAssetDeleteConfirmOpen} onClose={() => setIsAssetDeleteConfirmOpen(false)} onConfirm={() => selectedAsset && deleteAsset(selectedAsset.id)} title="Excluir Ativo" description={`Tem certeza que deseja remover o patrimônio ${selectedAsset?.patrimonio}?`} />
       <ConfirmDialog isOpen={isProductDeleteConfirmOpen} onClose={() => setIsProductDeleteConfirmOpen(false)} onConfirm={() => selectedProduct && deleteProduct(selectedProduct.id)} title="Excluir Modelo" description="Isso removerá o modelo do catálogo. Ativos vinculados podem ser afetados." />
       <ConfirmDialog isOpen={isCatDeleteConfirmOpen} onClose={() => setIsCatDeleteConfirmOpen(false)} onConfirm={() => selectedCategory && deleteCategory(selectedCategory.id)} title="Excluir Categoria" description={`Remover "${selectedCategory?.name}"?`} />

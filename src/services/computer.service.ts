@@ -38,6 +38,11 @@ export const computerService = {
     return response.data;
   },
 
+  async getStats(): Promise<Record<string, number>> {
+    const response = await api.get('/computadores/stats');
+    return response.data;
+  },
+
   async exportComputers(search = '', status?: string) {
     try {
       const LIMIT_PER_REQUEST = 100;

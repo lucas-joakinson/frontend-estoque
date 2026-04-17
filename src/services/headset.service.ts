@@ -38,6 +38,11 @@ export const headsetService = {
     return response.data;
   },
 
+  async getStats(): Promise<Record<HeadsetStatus, number>> {
+    const response = await api.get('/headsets/stats');
+    return response.data;
+  },
+
   async exportHeadsets(search = '', status?: string) {
     try {
       const LIMIT_PER_REQUEST = 100;

@@ -8,7 +8,6 @@ import {
   PackagePlus, Download, X, Settings2, UserMinus
 } from 'lucide-react';
 
-// Hooks
 import { useHeadsets, useHeadsetHistory } from '../hooks/useHeadsets';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -16,17 +15,14 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
-// UI Components
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 
-// Services & Schemas
 import { headsetService } from '../services/headset.service';
 import { headsetSchema, type HeadsetInput } from '../schemas/headset.schema';
 
-// Types
 import type { Headset, HeadsetStatus } from '../types';
 
 const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
@@ -101,7 +97,6 @@ export const Headsets = () => {
   const watchedMatricula = watch('matricula');
   const watchedStatus = watch('status');
 
-  // Automação: Se preencher a matrícula, muda o status para EM_USO (se estiver num status restrito)
   useEffect(() => {
     if (watchedMatricula && watchedMatricula.trim().length > 0) {
       if (RESTRICTED_STATUSES.includes(watchedStatus)) {
@@ -110,7 +105,6 @@ export const Headsets = () => {
     }
   }, [watchedMatricula, watchedStatus, setValue]);
 
-  // Limpa matrícula se o status for alterado para um restrito
   useEffect(() => {
     if (RESTRICTED_STATUSES.includes(watchedStatus)) {
       setValue('matricula', '');
@@ -138,7 +132,6 @@ export const Headsets = () => {
         const data: any = {};
         if (bulkData.status) {
           data.status = bulkData.status;
-          // Se o novo status for restrito, limpa a matrícula
           if (RESTRICTED_STATUSES.includes(bulkData.status)) {
             data.matricula = null;
           }
@@ -215,12 +208,17 @@ export const Headsets = () => {
   };
 
   const onSubmit = (data: HeadsetInput) => {
+    const payload = {
+      ...data,
+      matricula: data.matricula && data.matricula.trim() !== '' ? data.matricula : null
+    };
+
     if (selectedHeadset) {
-      updateHeadset({ id: selectedHeadset.id, data: data as any }, {
+      updateHeadset({ id: selectedHeadset.id, data: payload as any }, {
         onSuccess: () => setIsModalOpen(false),
       });
     } else {
-      createHeadset(data as any, {
+      createHeadset(payload as any, {
         onSuccess: () => setIsModalOpen(false),
       });
     }
@@ -382,7 +380,6 @@ export const Headsets = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-text-primary leading-tight">
@@ -416,7 +413,6 @@ export const Headsets = () => {
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative group w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary-400 transition-colors" size={18} />
@@ -476,9 +472,7 @@ export const Headsets = () => {
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
@@ -531,8 +525,8 @@ export const Headsets = () => {
                     <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.numeroSerie || '---'}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${(STATUS_LABELS[headset.status] || DEFAULT_STATUS).color}`}>
-                        {(STATUS_LABELS[headset.status] || DEFAULT_STATUS).label}
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[headset.status]?.color || DEFAULT_STATUS.color}`}>
+                        {STATUS_LABELS[headset.status]?.label || DEFAULT_STATUS.label}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right text-[10px] font-mono text-text-secondary uppercase">
@@ -583,7 +577,6 @@ export const Headsets = () => {
         </div>
       </div>
 
-      {/* Paginação */}
       {headsetsData && headsetsData.pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
           <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">

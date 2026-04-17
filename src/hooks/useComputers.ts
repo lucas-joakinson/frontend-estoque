@@ -15,7 +15,6 @@ export const useComputers = (
     queryKey: ['computers', page, limit, search, status],
     queryFn: async () => {
       const data = await computerService.listComputers(page, limit, search, status);
-      // Sanitização para garantir que localizacao seja preenchido mesmo se vier como location
       if (data.computers) {
         data.computers = data.computers.map((comp: any) => ({
           ...comp,
@@ -90,5 +89,12 @@ export const useComputerHistory = (computerId: string | null) => {
     queryKey: ['computer-history', computerId],
     queryFn: () => computerService.getComputerHistory(computerId!),
     enabled: !!computerId,
+  });
+};
+
+export const useComputerStats = () => {
+  return useQuery({
+    queryKey: ['computers', 'stats'],
+    queryFn: () => computerService.getStats(),
   });
 };

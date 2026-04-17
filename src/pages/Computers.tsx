@@ -8,7 +8,6 @@ import {
   PackagePlus, Download, MapPin, X, Settings2
 } from 'lucide-react';
 
-// Hooks
 import { useComputers, useComputerHistory } from '../hooks/useComputers';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -16,17 +15,14 @@ import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 
-// UI Components
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 
-// Services & Schemas
 import { computerService } from '../services/computer.service';
 import { computerSchema, type ComputerInput } from '../schemas/computer.schema';
 
-// Types
 import type { Computer, ComputerStatus } from '../types';
 
 const STATUS_LABELS: Record<ComputerStatus, { label: string; color: string }> = {
@@ -295,7 +291,6 @@ export const Computers = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <h2 className="text-3xl font-bold text-text-primary leading-tight">
@@ -329,7 +324,6 @@ export const Computers = () => {
         </div>
       </div>
 
-      {/* Filtros */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative group w-full md:w-80">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary-400 transition-colors" size={18} />
@@ -389,9 +383,7 @@ export const Computers = () => {
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
-        <div className="overflow-x-auto">
+      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
@@ -442,8 +434,8 @@ export const Computers = () => {
                     </td>
                     <td className="px-6 py-4 text-sm font-mono text-primary-400">{comp.hostname}</td>
                     <td className="px-6 py-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[comp.status].color}`}>
-                        {STATUS_LABELS[comp.status].label}
+                      <span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[comp.status]?.color || 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>
+                        {STATUS_LABELS[comp.status]?.label || 'Desconhecido'}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{comp.localizacao}</td>
@@ -486,7 +478,6 @@ export const Computers = () => {
         </div>
       </div>
 
-      {/* Paginação */}
       {computersData && computersData.pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
           <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">
@@ -511,7 +502,6 @@ export const Computers = () => {
         </div>
       )}
 
-      {/* Ações em Massa */}
       {selectedComputerIds.length > 0 && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
           <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">

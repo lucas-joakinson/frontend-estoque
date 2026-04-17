@@ -88,3 +88,10 @@ export const useHeadsetHistory = (headsetId: string | null) => {
     enabled: !!headsetId,
   });
 };
+
+export const useHeadsetStats = () => {
+  return useQuery({
+    queryKey: ['headsets', 'stats'],
+    queryFn: () => headsetService.getStats(),
+  });
+};

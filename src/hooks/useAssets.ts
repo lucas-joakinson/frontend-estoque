@@ -143,3 +143,10 @@ export const useAssetHistory = (assetId: string | null) => {
     enabled: !!assetId,
   });
 };
+
+export const useAssetStats = () => {
+  return useQuery({
+    queryKey: ['assets', 'stats'],
+    queryFn: () => assetService.getStats(),
+  });
+};

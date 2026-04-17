@@ -89,7 +89,6 @@ export const Profile = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Card de Informações e Avatar */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-surface border border-border-primary rounded-3xl p-8 flex flex-col items-center text-center space-y-6 shadow-sm">
             <div className="relative group">
@@ -183,7 +182,6 @@ export const Profile = () => {
           </div>
         </div>
 
-        {/* Formulário de Segurança */}
         <div className="md:col-span-2">
           <div className="bg-surface border border-border-primary rounded-3xl p-8 space-y-8 shadow-sm">
             <div className="flex items-center gap-3">
