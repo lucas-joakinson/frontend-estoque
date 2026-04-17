@@ -224,24 +224,28 @@ export const Headsets = () => {
     }
   };
 
-  const handleDisconnect = async () => {
+  const handleDisconnect = () => {
     if (!selectedHeadset) return;
     
     const toastId = toast.loading('Desvinculando operador...');
-    try {
-      await updateHeadset({ 
-        id: selectedHeadset.id, 
-        data: { 
-          matricula: null, 
-          status: disconnectStatus,
-          observacoes: `Operador desligado. Equipamento definido como ${STATUS_LABELS[disconnectStatus].label}.`
-        } 
-      });
-      setIsDisconnectModalOpen(false);
-      setSelectedHeadset(null);
-    } catch (error) {
-      toast.error('Erro ao desvincular operador.', { id: toastId });
-    }
+    
+    updateHeadset({ 
+      id: selectedHeadset.id, 
+      data: { 
+        matricula: null, 
+        status: disconnectStatus,
+        observacoes: `Operador desligado. Equipamento definido como ${STATUS_LABELS[disconnectStatus].label}.`
+      } 
+    }, {
+      onSuccess: () => {
+        toast.success('Operador desvinculado com sucesso!', { id: toastId });
+        setIsDisconnectModalOpen(false);
+        setSelectedHeadset(null);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Erro ao desvincular operador', { id: toastId });
+      }
+    });
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
