@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export const Header = ({ title }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
-  const { summary, activities } = useNotifications();
+  const { summary, activities, clearActivities } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -81,7 +81,6 @@ export const Header = ({ title }: HeaderProps) => {
               </div>
 
               <div className="max-h-[400px] overflow-y-auto">
-                {/* Alertas Críticos/Avisos */}
                 {summary?.alerts && summary.alerts.length > 0 ? (
                   <div className="p-2 space-y-1 border-b border-border-primary">
                     <p className="px-2 py-1 text-[10px] font-bold text-text-secondary uppercase tracking-wider">Alertas do Sistema</p>
@@ -112,9 +111,22 @@ export const Header = ({ title }: HeaderProps) => {
                   </div>
                 )}
 
-                {/* Atividades Recentes */}
                 <div className="p-2 space-y-1">
-                  <p className="px-2 py-1 text-[10px] font-bold text-text-secondary uppercase tracking-wider">Atividades Recentes</p>
+                  <div className="flex items-center justify-between px-2 py-1">
+                    <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">Atividades Recentes</p>
+                    {activities && activities.length > 0 && (
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          clearActivities();
+                        }}
+                        className="text-[9px] font-bold text-primary-500 hover:text-primary-400 uppercase tracking-tighter transition-colors"
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
                   {activities && activities.length > 0 ? (
                     activities.map((activity) => (
                       <div key={activity.id} className="flex items-start gap-3 p-2 rounded-xl">

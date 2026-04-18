@@ -25,4 +25,8 @@ export const notificationService = {
     const response = await api.put('/notifications/settings', data);
     return response.data;
   },
+
+  async clearRecentActivities(): Promise<void> {
+    await api.post('/notifications/recent-activities/clear');
+  },
 };

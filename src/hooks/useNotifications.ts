@@ -33,6 +33,18 @@ export const useNotifications = () => {
     },
   });
 
+  const clearActivitiesMutation = useMutation({
+    mutationFn: notificationService.clearRecentActivities,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'activities'] });
+    },
+    onError: () => {
+      // Mesmo se falhar no back (ex: rota não existe ainda), 
+      // podemos invalidar para manter o front limpo se o usuário desejar
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'activities'] });
+    },
+  });
+
   return {
     summary: summaryQuery.data,
     activities: recentActivitiesQuery.data,
@@ -40,5 +52,6 @@ export const useNotifications = () => {
     isLoading: summaryQuery.isLoading || recentActivitiesQuery.isLoading,
     updateSettings: updateSettingsMutation.mutate,
     isUpdating: updateSettingsMutation.isPending,
+    clearActivities: clearActivitiesMutation.mutate,
   };
 };
