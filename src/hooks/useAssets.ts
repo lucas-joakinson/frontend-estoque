@@ -80,6 +80,7 @@ export const useAssets = (
       assetService.createAsset(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Ativo registrado com sucesso!');
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
@@ -104,6 +105,7 @@ export const useAssets = (
       assetService.updateAsset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Ativo atualizado com sucesso!');
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {
@@ -115,6 +117,7 @@ export const useAssets = (
     mutationFn: (id: string) => assetService.deleteAsset(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Ativo removido do sistema!');
     },
     onError: (error: { response?: { data?: { message?: string } } }) => {

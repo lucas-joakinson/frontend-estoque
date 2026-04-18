@@ -27,6 +27,7 @@ export const useHeadsets = (
       headsetService.createHeadset(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Headset registrado com sucesso!');
     },
     onError: (error: any) => {
@@ -51,6 +52,7 @@ export const useHeadsets = (
       headsetService.updateHeadset(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Headset atualizado com sucesso!');
     },
     onError: (error: any) => {
@@ -62,6 +64,7 @@ export const useHeadsets = (
     mutationFn: (id: string) => headsetService.deleteHeadset(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['headsets'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Headset removido do sistema!');
     },
     onError: (error: any) => {

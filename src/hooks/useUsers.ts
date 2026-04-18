@@ -67,6 +67,7 @@ export const useUsers = (
       userService.createUser(data.name, data.matricula, data.password, data.role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Novo usuário cadastrado com sucesso!');
     },
     onError: (error: ApiError) => {
@@ -82,6 +83,7 @@ export const useUsers = (
     mutationFn: (id: string) => userService.deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Usuário removido com sucesso!');
     },
     onError: (error: ApiError) => {
@@ -95,6 +97,7 @@ export const useUsers = (
       userService.updateUser(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Usuário atualizado com sucesso!');
     },
     onError: (error: ApiError) => {

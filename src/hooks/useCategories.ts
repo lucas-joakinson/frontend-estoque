@@ -61,6 +61,7 @@ export const useCategories = (page = 1, limit = 10, search = '', sortBy = 'name'
     mutationFn: (name: string) => categoryService.create(name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Categoria criada com sucesso!');
     },
     onError: (error: ApiError) => {
@@ -72,6 +73,7 @@ export const useCategories = (page = 1, limit = 10, search = '', sortBy = 'name'
     mutationFn: ({ id, name }: { id: string; name: string }) => categoryService.update(id, name),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Categoria atualizada com sucesso!');
     },
     onError: (error: ApiError) => {
@@ -83,6 +85,7 @@ export const useCategories = (page = 1, limit = 10, search = '', sortBy = 'name'
     mutationFn: (id: string) => categoryService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Categoria excluída com sucesso!');
     },
     onError: (error: ApiError) => {
