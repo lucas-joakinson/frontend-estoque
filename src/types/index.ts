@@ -10,6 +10,33 @@ export interface UserPermissions {
   canManageHeadsets: boolean;
   canDeleteHeadsets: boolean;
   canExportData: boolean;
+  canManageNotifications: boolean;
+}
+
+export interface NotificationAlert {
+  id: string;
+  type: 'CRITICAL' | 'WARNING' | 'INFO';
+  title: string;
+  message: string;
+  action_link: string;
+}
+
+export interface NotificationSummary {
+  alerts: NotificationAlert[];
+  unread_count: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  userName: string;
+  action: string;
+  itemName: string;
+  timestamp: string;
+}
+
+export interface NotificationSettings {
+  min_headsets_disponiveis: number;
+  max_headsets_defeito: number;
 }
 
 export interface Role {
