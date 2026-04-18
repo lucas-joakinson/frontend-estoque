@@ -223,7 +223,7 @@ export const Headsets = () => {
         lacre: '',
         marca: '',
         numeroSerie: '',
-        status: 'RESERVA',
+        status: 'EM_USO',
         observacoes: '',
       });
     }
