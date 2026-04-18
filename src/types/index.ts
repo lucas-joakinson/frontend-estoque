@@ -39,6 +39,11 @@ export interface NotificationSettings {
   max_headsets_defeito: number;
 }
 
+export interface AssetCategoryStat {
+  name: string;
+  count: number;
+}
+
 export interface Role {
   id: string;
   name: string;

@@ -150,3 +150,10 @@ export const useAssetStats = () => {
     queryFn: () => assetService.getStats(),
   });
 };
+
+export const useAssetCategoryStats = () => {
+  return useQuery({
+    queryKey: ['assets', 'category-stats'],
+    queryFn: () => assetService.getCategoryStats(),
+  });
+};

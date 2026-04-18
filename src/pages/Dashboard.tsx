@@ -1,13 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Package, Tag, MapPin, History, BarChart3, 
+  Package, Tag, History, BarChart3, 
   PieChart as PieChartIcon, LayoutDashboard, Headphones, Monitor, 
   Boxes, CheckCircle2, AlertTriangle, Hammer, XCircle
 } from 'lucide-react';
 import { useProducts } from '../hooks/useProducts';
 import { useCategories } from '../hooks/useCategories';
-import { useAssets, useAssetStats } from '../hooks/useAssets';
+import { useAssets, useAssetStats, useAssetCategoryStats } from '../hooks/useAssets';
 import { useHeadsetStats } from '../hooks/useHeadsets';
 import { useComputerStats } from '../hooks/useComputers';
 import { useAuth } from '../hooks/useAuth';
@@ -45,7 +45,17 @@ const COMPUTER_STATUS_LABELS: Record<ComputerStatus, { label: string; color: str
   'Troca pendente': { label: 'Troca Pendente', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', hex: '#71717a' },
 };
 
-const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primary-400", bgClass = "bg-primary-500/10", onClick }: { label: string; value: number; icon: any; loading: boolean; colorClass?: string; bgClass?: string; onClick?: () => void }) => (
+interface StatCardProps {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+  loading: boolean;
+  colorClass?: string;
+  bgClass?: string;
+  onClick?: () => void;
+}
+
+const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primary-400", bgClass = "bg-primary-500/10", onClick }: StatCardProps) => (
   <div 
     onClick={onClick}
     className={`p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
@@ -71,9 +81,13 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DashboardTab>('geral');
 
-  const handleNavigate = (path: string, params: Record<string, string>) => {
-    const searchParams = new URLSearchParams(params);
-    navigate(`${path}?${searchParams.toString()}`);
+  const handleNavigate = (path: string, params: Record<string, string | undefined> = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) searchParams.set(key, value);
+    });
+    const query = searchParams.toString();
+    navigate(query ? `${path}?${query}` : path);
   };
 
   if (!hasPermission('canViewReports')) {
@@ -92,26 +106,32 @@ export const Dashboard = () => {
     );
   }
 
-  const { productsData, isLoading: loadingProducts } = useProducts(1, 10);
+  // Permissões específicas
+  const canManageHeadsets = hasPermission('canManageHeadsets');
+  const canManageComputers = hasPermission('canManageComputers');
+
+  // Queries
+  const { isLoading: loadingProducts } = useProducts(1, 10);
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 10);
   const { assetsData, isLoading: loadingAssets } = useAssets(1, 10, '', undefined, undefined, 'updatedAt', 'desc');
   const { data: assetStatsData, isLoading: loadingAssetStats } = useAssetStats();
+  const { data: categoryStatsData } = useAssetCategoryStats();
   const { data: headsetStatsData, isLoading: loadingHeadsets } = useHeadsetStats();
   const { data: computerStatsData, isLoading: loadingComputers } = useComputerStats();
 
   const assets = assetsData?.assets || [];
   
   const totalAssets = useMemo(() => {
-    if (assetStatsData) return Object.values(assetStatsData).reduce((a, b) => a + b, 0);
+    if (assetStatsData) return Object.values(assetStatsData).reduce((a, b) => (a as number) + (b as number), 0) as number;
     return assetsData?.pagination?.total || 0;
   }, [assetStatsData, assetsData]);
 
   const totalHeadsets = useMemo(() => 
-    headsetStatsData ? Object.values(headsetStatsData).reduce((a, b) => a + b, 0) : 0
+    headsetStatsData ? Object.values(headsetStatsData).reduce((a, b) => (a as number) + (b as number), 0) as number : 0
   , [headsetStatsData]);
 
   const totalComputers = useMemo(() => 
-    computerStatsData ? Object.values(computerStatsData).reduce((a, b) => a + b, 0) : 0
+    computerStatsData ? Object.values(computerStatsData).reduce((a, b) => (a as number) + (b as number), 0) as number : 0
   , [computerStatsData]);
 
   const generalStats = useMemo(() => [
@@ -122,9 +142,10 @@ export const Dashboard = () => {
 
   const assetStatusData = useMemo(() => {
     if (assetStatsData) {
+      const stats = assetStatsData as Record<string, number>;
       return Object.entries(ASSET_STATUS_LABELS).map(([key, { label, hex }]) => ({
         name: label,
-        value: assetStatsData[key as AssetStatus] || 0,
+        value: stats[key] || 0,
         color: hex
       })).filter(d => d.value > 0);
     }
@@ -135,44 +156,25 @@ export const Dashboard = () => {
     })).filter(d => d.value > 0);
   }, [assetStatsData, assets]);
 
-  const categoryData = useMemo(() => {
-    const counts: Record<string, number> = {};
-    assets.forEach(asset => {
-      const catName = asset.product?.category?.name || 'Sem Categoria';
-      counts[catName] = (counts[catName] || 0) + 1;
-    });
-    return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count).slice(0, 5);
-  }, [assets]);
-
-  const headsetStatusChartData = useMemo(() => 
-    headsetStatsData ? Object.entries(HEADSET_STATUS_LABELS).map(([key, { label, hex }]) => ({
+  const headsetStatusChartData = useMemo(() => {
+    if (!headsetStatsData) return [];
+    const stats = headsetStatsData as Record<string, number>;
+    return Object.entries(HEADSET_STATUS_LABELS).map(([key, { label, hex }]) => ({
       name: label,
-      value: headsetStatsData[key as HeadsetStatus] || 0,
+      value: stats[key] || 0,
       color: hex
-    })).filter(d => d.value > 0) : []
-  , [headsetStatsData]);
+    })).filter(d => d.value > 0);
+  }, [headsetStatsData]);
 
-  const headsetStats = useMemo(() => [
-    { label: 'Em Uso', value: headsetStatsData?.['EM_USO'] || 0, icon: CheckCircle2, colorClass: 'text-emerald-400', bgClass: 'bg-emerald-500/10' },
-    { label: 'Em Manutenção', value: headsetStatsData?.['EM_MANUTENCAO'] || 0, icon: Hammer, colorClass: 'text-orange-400', bgClass: 'bg-orange-500/10' },
-    { label: 'Com Defeito', value: headsetStatsData?.['DEFEITO'] || 0, icon: AlertTriangle, colorClass: 'text-red-400', bgClass: 'bg-red-500/10' },
-    { label: 'Disponível', value: (headsetStatsData?.['DISPONIVEL'] || 0) + (headsetStatsData?.['RESERVA'] || 0), icon: Tag, colorClass: 'text-zinc-400', bgClass: 'bg-zinc-500/10' },
-  ], [headsetStatsData]);
-
-  const computerStatusChartData = useMemo(() => 
-    computerStatsData ? Object.entries(COMPUTER_STATUS_LABELS).map(([key, { label, hex }]) => ({
+  const computerStatusChartData = useMemo(() => {
+    if (!computerStatsData) return [];
+    const stats = computerStatsData as Record<string, number>;
+    return Object.entries(COMPUTER_STATUS_LABELS).map(([key, { label, hex }]) => ({
       name: label,
-      value: computerStatsData[key as ComputerStatus] || 0,
+      value: stats[key] || 0,
       color: hex
-    })).filter(d => d.value > 0) : []
-  , [computerStatsData]);
-
-  const computerStats = useMemo(() => [
-    { label: 'Em Uso', value: computerStatsData?.['Em uso'] || 0, icon: CheckCircle2, colorClass: 'text-emerald-400', bgClass: 'bg-emerald-500/10' },
-    { label: 'Em Estoque', value: computerStatsData?.['Em estoque'] || 0, icon: Tag, colorClass: 'text-blue-400', bgClass: 'bg-blue-500/10' },
-    { label: 'Manutenção', value: computerStatsData?.['Manutenção'] || 0, icon: Hammer, colorClass: 'text-amber-400', bgClass: 'bg-amber-500/10' },
-    { label: 'Com Defeito', value: computerStatsData?.['Defeito'] || 0, icon: XCircle, colorClass: 'text-red-400', bgClass: 'bg-red-500/10' },
-  ], [computerStatsData]);
+    })).filter(d => d.value > 0);
+  }, [computerStatsData]);
 
   const recentAssets = useMemo(() => assets.slice(0, 5), [assets]);
 
@@ -202,18 +204,22 @@ export const Dashboard = () => {
           >
             <Boxes size={14} /> ESTOQUE
           </button>
-          <button
-            onClick={() => setActiveTab('headsets')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'headsets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            <Headphones size={14} /> HEADSETS
-          </button>
-          <button
-            onClick={() => setActiveTab('computadores')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'computadores' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
-          >
-            <Monitor size={14} /> COMPUTADORES
-          </button>
+          {canManageHeadsets && (
+            <button
+              onClick={() => setActiveTab('headsets')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'headsets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <Headphones size={14} /> HEADSETS
+            </button>
+          )}
+          {canManageComputers && (
+            <button
+              onClick={() => setActiveTab('computadores')}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'computadores' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              <Monitor size={14} /> COMPUTADORES
+            </button>
+          )}
         </div>
       </div>
 
@@ -275,18 +281,24 @@ export const Dashboard = () => {
       )}
 
       {activeTab === 'estoque' && (
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard label="Modelos Únicos" value={productsData?.pagination?.total || 0} icon={Package} loading={loadingProducts} />
-            <StatCard 
-              label="Categorias" 
-              value={categoriesData?.pagination?.total || 0} 
-              icon={Tag} 
-              loading={loadingCategories} 
-              onClick={() => handleNavigate('/inventory', { tab: 'categories' })}
-            />
-            <StatCard label="Em Uso" value={assetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingAssetStats} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/inventory', { status: 'EM_USO' })} />
-            <StatCard label="Disponíveis" value={assetStatsData?.['DISPONIVEL'] || 0} icon={Tag} loading={loadingAssetStats} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/inventory', { status: 'DISPONIVEL' })} />
+       <div className="space-y-10">
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+           <StatCard 
+             label="Total de Ativos" 
+             value={totalAssets} 
+             icon={Package} 
+             loading={loadingAssetStats || loadingAssets} 
+             onClick={() => handleNavigate('/inventory')}
+           />
+           <StatCard 
+             label="Categorias" 
+             value={categoriesData?.pagination?.total || 0} 
+             icon={Tag} 
+             loading={loadingCategories} 
+             onClick={() => handleNavigate('/inventory', { tab: 'categories' })}
+           />
+            <StatCard label="Em Uso" value={(assetStatsData as Record<string, number> | undefined)?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingAssetStats} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/inventory', { status: 'EM_USO' })} />
+            <StatCard label="Disponíveis" value={(assetStatsData as Record<string, number> | undefined)?.['DISPONIVEL'] || 0} icon={Tag} loading={loadingAssetStats} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/inventory', { status: 'DISPONIVEL' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -297,7 +309,7 @@ export const Dashboard = () => {
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="99%" height={300}>
-                  <BarChart data={categoryData}>
+                  <BarChart data={categoryStatsData || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                     <XAxis dataKey="name" stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} fontFamily="monospace" />
                     <YAxis stroke="#71717a" fontSize={10} tickLine={false} axisLine={false} fontFamily="monospace" />
@@ -332,10 +344,10 @@ export const Dashboard = () => {
       {activeTab === 'headsets' && (
         <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard label="Em Uso" value={headsetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingHeadsets} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_USO' })} />
-            <StatCard label="Em Manutenção" value={headsetStatsData?.['EM_MANUTENCAO'] || 0} icon={Hammer} loading={loadingHeadsets} colorClass="text-orange-400" bgClass="bg-orange-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_MANUTENCAO' })} />
-            <StatCard label="Com Defeito" value={headsetStatsData?.['DEFEITO'] || 0} icon={AlertTriangle} loading={loadingHeadsets} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/headsets', { status: 'DEFEITO' })} />
-            <StatCard label="Disponível" value={(headsetStatsData?.['DISPONIVEL'] || 0) + (headsetStatsData?.['RESERVA'] || 0)} icon={Tag} loading={loadingHeadsets} colorClass="text-zinc-400" bgClass="bg-zinc-500/10" onClick={() => handleNavigate('/headsets', { status: 'DISPONIVEL' })} />
+            <StatCard label="Em Uso" value={(headsetStatsData as Record<string, number> | undefined)?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingHeadsets} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_USO' })} />
+            <StatCard label="Em Manutenção" value={(headsetStatsData as Record<string, number> | undefined)?.['EM_MANUTENCAO'] || 0} icon={Hammer} loading={loadingHeadsets} colorClass="text-orange-400" bgClass="bg-orange-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_MANUTENCAO' })} />
+            <StatCard label="Com Defeito" value={(headsetStatsData as Record<string, number> | undefined)?.['DEFEITO'] || 0} icon={AlertTriangle} loading={loadingHeadsets} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/headsets', { status: 'DEFEITO' })} />
+            <StatCard label="Disponível" value={((headsetStatsData as Record<string, number> | undefined)?.['DISPONIVEL'] || 0) + ((headsetStatsData as Record<string, number> | undefined)?.['RESERVA'] || 0)} icon={Tag} loading={loadingHeadsets} colorClass="text-zinc-400" bgClass="bg-zinc-500/10" onClick={() => handleNavigate('/headsets', { status: 'DISPONIVEL' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -362,17 +374,17 @@ export const Dashboard = () => {
                 <div className="p-6 rounded-3xl bg-hover-bg/50 border border-border-primary text-center">
                   <h4 className="text-[10px] font-mono text-text-secondary uppercase tracking-widest mb-2">Saúde da Frota</h4>
                   <div className="text-4xl font-bold font-mono text-emerald-400">
-                    {Math.round((((headsetStatsData?.['EM_USO'] || 0) + (headsetStatsData?.['RESERVA'] || 0) + (headsetStatsData?.['DISPONIVEL'] || 0)) / (totalHeadsets || 1)) * 100)}%
+                    {Math.round(((((headsetStatsData as Record<string, number> | undefined)?.['EM_USO'] || 0) + ((headsetStatsData as Record<string, number> | undefined)?.['RESERVA'] || 0) + ((headsetStatsData as Record<string, number> | undefined)?.['DISPONIVEL'] || 0)) / (totalHeadsets || 1)) * 100)}%
                   </div>
                   <p className="text-[10px] font-mono text-text-secondary mt-2 uppercase">Equipamentos Operacionais</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-orange-500/5 border border-orange-500/10 text-center">
-                    <span className="block text-xl font-bold font-mono text-orange-400">{headsetStatsData?.['EM_MANUTENCAO'] || 0}</span>
+                    <span className="block text-xl font-bold font-mono text-orange-400">{(headsetStatsData as Record<string, number> | undefined)?.['EM_MANUTENCAO'] || 0}</span>
                     <span className="text-[9px] font-mono text-text-secondary uppercase">Em Reparo</span>
                   </div>
                   <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-center">
-                    <span className="block text-xl font-bold font-mono text-red-400">{headsetStatsData?.['DEFEITO'] || 0}</span>
+                    <span className="block text-xl font-bold font-mono text-red-400">{(headsetStatsData as Record<string, number> | undefined)?.['DEFEITO'] || 0}</span>
                     <span className="text-[9px] font-mono text-text-secondary uppercase">Perda Total</span>
                   </div>
                 </div>
@@ -385,10 +397,10 @@ export const Dashboard = () => {
       {activeTab === 'computadores' && (
         <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatCard label="Em Uso" value={computerStatsData?.['Em uso'] || 0} icon={CheckCircle2} loading={loadingComputers} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/computers', { status: 'Em uso' })} />
-            <StatCard label="Em Estoque" value={computerStatsData?.['Em estoque'] || 0} icon={Tag} loading={loadingComputers} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/computers', { status: 'Em estoque' })} />
-            <StatCard label="Manutenção" value={computerStatsData?.['Manutenção'] || 0} icon={Hammer} loading={loadingComputers} colorClass="text-amber-400" bgClass="bg-amber-500/10" onClick={() => handleNavigate('/computers', { status: 'Manutenção' })} />
-            <StatCard label="Com Defeito" value={computerStatsData?.['Defeito'] || 0} icon={XCircle} loading={loadingComputers} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/computers', { status: 'Defeito' })} />
+            <StatCard label="Em Uso" value={(computerStatsData as Record<string, number> | undefined)?.['Em uso'] || 0} icon={CheckCircle2} loading={loadingComputers} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/computers', { status: 'Em uso' })} />
+            <StatCard label="Em Estoque" value={(computerStatsData as Record<string, number> | undefined)?.['Em estoque'] || 0} icon={Tag} loading={loadingComputers} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/computers', { status: 'Em estoque' })} />
+            <StatCard label="Manutenção" value={(computerStatsData as Record<string, number> | undefined)?.['Manutenção'] || 0} icon={Hammer} loading={loadingComputers} colorClass="text-amber-400" bgClass="bg-amber-500/10" onClick={() => handleNavigate('/computers', { status: 'Manutenção' })} />
+            <StatCard label="Com Defeito" value={(computerStatsData as Record<string, number> | undefined)?.['Defeito'] || 0} icon={XCircle} loading={loadingComputers} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/computers', { status: 'Defeito' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -418,21 +430,21 @@ export const Dashboard = () => {
               <div className="space-y-4 pt-4">
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-hover-bg border border-border-primary">
                   <span className="text-xs font-mono text-text-secondary uppercase">Disponibilidade</span>
-                  <span className="text-sm font-bold text-text-primary">{computerStatsData?.['Em estoque'] || 0} Livres</span>
+                  <span className="text-sm font-bold text-text-primary">{(computerStatsData as Record<string, number> | undefined)?.['Em estoque'] || 0} Livres</span>
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-hover-bg border border-border-primary">
                   <span className="text-xs font-mono text-text-secondary uppercase">Taxa de Ocupação</span>
                   <span className="text-sm font-bold text-text-primary">
-                    {Math.round(((computerStatsData?.['Em uso'] || 0) / (totalComputers || 1)) * 100)}%
+                    {Math.round((((computerStatsData as Record<string, number> | undefined)?.['Em uso'] || 0) / (totalComputers || 1)) * 100)}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-hover-bg border border-border-primary">
                   <span className="text-xs font-mono text-text-secondary uppercase">Aguardando Manutenção</span>
-                  <span className="text-sm font-bold text-amber-400">{computerStatsData?.['Manutenção'] || 0} unidades</span>
+                  <span className="text-sm font-bold text-amber-400">{(computerStatsData as Record<string, number> | undefined)?.['Manutenção'] || 0} unidades</span>
                 </div>
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-hover-bg border border-border-primary">
                   <span className="text-xs font-mono text-text-secondary uppercase">Inoperantes (Defeito)</span>
-                  <span className="text-sm font-bold text-red-400">{computerStatsData?.['Defeito'] || 0} unidades</span>
+                  <span className="text-sm font-bold text-red-400">{(computerStatsData as Record<string, number> | undefined)?.['Defeito'] || 0} unidades</span>
                 </div>
               </div>
             </div>

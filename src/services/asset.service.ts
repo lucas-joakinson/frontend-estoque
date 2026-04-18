@@ -48,6 +48,11 @@ export const assetService = {
     return response.data;
   },
 
+  async getCategoryStats(): Promise<any[]> {
+    const response = await api.get('/assets/stats/categories');
+    return response.data;
+  },
+
   async exportAssets(search = '', status?: string, categoryId?: string) {
     try {
       const LIMIT_PER_REQUEST = 100;
