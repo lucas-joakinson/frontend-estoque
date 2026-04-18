@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       refreshProfile();
     }
     
-    navigate('/dashboard', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const hasPermission = useCallback((permission: keyof UserPermissions) => {

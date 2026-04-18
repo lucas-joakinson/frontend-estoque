@@ -1,15 +1,17 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, LogOut, Users as UsersIcon, Headphones, Monitor } from 'lucide-react';
+import { LayoutDashboard, Package, LogOut, Users as UsersIcon, Headphones, Monitor, House } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { Avatar } from '../ui/Avatar';
+import type { UserPermissions } from '../../types';
 
 export const Sidebar = () => {
   const { logout, hasPermission } = useAuth();
   const { user } = useAuthContext();
 
   const links = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'canViewReports' as keyof UserPermissions },
+    { to: '/', label: 'Início', icon: House },
+    { to: '/dashboard', label: 'Estatísticas', icon: LayoutDashboard, permission: 'canViewReports' as keyof UserPermissions },
     { to: '/inventory', label: 'Gerenciar Estoque', icon: Package, permission: 'canManageAssets' as keyof UserPermissions },
     { to: '/headsets', label: 'Headsets', icon: Headphones, permission: 'canManageHeadsets' as keyof UserPermissions },
     { to: '/computers', label: 'Computadores', icon: Monitor, permission: 'canManageComputers' as keyof UserPermissions },
@@ -19,16 +21,16 @@ export const Sidebar = () => {
     <aside className="fixed top-0 left-0 z-50 h-screen w-72 bg-surface/80 backdrop-blur-xl border-r border-border-primary transition-all duration-300 overflow-y-auto no-scrollbar">
       <div className="h-20 px-8 border-b border-border-primary flex items-center gap-4">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-400 flex items-center justify-center shadow-glow-purple">
-          <span className="text-white font-mono font-bold text-lg">{'>_'}</span>
+          <span className="text-white font-mono font-bold text-lg">{'Es'}</span>
         </div>
         <h1 className="text-xl font-bold font-mono tracking-tight text-primary-400">
-          ATIVOS
+          Estoque
         </h1>
       </div>
 
       <nav className="p-6 space-y-2">
         {links.map((link) => (
-          (hasPermission(link.permission) || link.to === '/dashboard') && (
+          (!link.permission || hasPermission(link.permission)) && (
             <NavLink
               key={link.to}
               to={link.to}

@@ -9,6 +9,7 @@ import { Headsets } from './pages/Headsets';
 import { Computers } from './pages/Computers';
 import { Users } from './pages/Users';
 import { Profile } from './pages/Profile';
+import { Home } from './pages/Home';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicRoute } from './components/PublicRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -48,7 +49,11 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
           </Route>
           
-          <Route element={<ProtectedRoute title="Dashboard" />}>
+          <Route element={<ProtectedRoute title="Início" />}>
+            <Route path="/" element={<Home />} />
+          </Route>
+
+          <Route element={<ProtectedRoute title="Dashboard" requiredPermission="canViewReports" />}>
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
 
@@ -72,8 +77,7 @@ function AppContent() {
             <Route path="/profile" element={<Profile />} />
           </Route>
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
       
