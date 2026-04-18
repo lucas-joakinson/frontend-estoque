@@ -39,7 +39,9 @@ const STATUS_LABELS: Record<AssetStatus, { label: string; color: string }> = {
 type InventoryTab = 'products' | 'categories' | 'assets';
 
 export const Inventory = () => {
-  const [activeTab, setActiveTab] = useState<InventoryTab>('assets');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = (searchParams.get('tab') as InventoryTab) || 'assets';
+  const [activeTab, setActiveTab] = useState<InventoryTab>(initialTab);
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
 
@@ -49,7 +51,6 @@ export const Inventory = () => {
   const canDelete = hasPermission('canDeleteItems');
   const canExportData = hasPermission('canExportData');
 
-  const [searchParams, setSearchParams] = useSearchParams();
   const [assetPage, setAssetPage] = useState(1);
   const [assetLimit, setAssetLimit] = useState(10);
   

@@ -278,7 +278,13 @@ export const Dashboard = () => {
         <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard label="Modelos Únicos" value={productsData?.pagination?.total || 0} icon={Package} loading={loadingProducts} />
-            <StatCard label="Categorias" value={categoriesData?.pagination?.total || 0} icon={Tag} loading={loadingCategories} />
+            <StatCard 
+              label="Categorias" 
+              value={categoriesData?.pagination?.total || 0} 
+              icon={Tag} 
+              loading={loadingCategories} 
+              onClick={() => handleNavigate('/inventory', { tab: 'categories' })}
+            />
             <StatCard label="Em Uso" value={assetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingAssetStats} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/inventory', { status: 'EM_USO' })} />
             <StatCard label="Disponíveis" value={assetStatsData?.['DISPONIVEL'] || 0} icon={Tag} loading={loadingAssetStats} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/inventory', { status: 'DISPONIVEL' })} />
           </div>
