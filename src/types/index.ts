@@ -5,12 +5,20 @@ export interface UserPermissions {
   canManageAssets: boolean;
   canDeleteItems: boolean;
   canViewReports: boolean;
+  canManageComputers: boolean;
+  canDeleteComputers: boolean;
+  canManageHeadsets: boolean;
+  canDeleteHeadsets: boolean;
+  canExportData: boolean;
 }
 
 export interface Role {
   id: string;
   name: string;
   permissions: UserPermissions;
+  _count?: {
+    users: number;
+  };
 }
 
 export interface User {

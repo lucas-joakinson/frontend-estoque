@@ -4,23 +4,34 @@ import { Header } from './layout/Header';
 import { toast } from 'sonner';
 import { useEffect } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { Spinner } from './ui/Spinner';
+import type { UserPermissions } from '../types';
 
 interface ProtectedRouteProps {
   title: string;
   requiredRole?: 'ADMIN' | 'OPERATOR';
+  requiredPermission?: keyof UserPermissions;
 }
 
-export const ProtectedRoute = ({ title, requiredRole }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ title, requiredRole, requiredPermission }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuthContext();
+  const { hasPermission } = useAuth();
   const token = localStorage.getItem('token');
   
   const isAdmin = user?.role === 'ADMIN';
-  const isAuthorized = !requiredRole || (requiredRole === 'ADMIN' ? isAdmin : true);
+  
+  let isAuthorized = true;
+  if (requiredRole === 'ADMIN') {
+    isAuthorized = isAdmin;
+  }
+  if (requiredPermission) {
+    isAuthorized = hasPermission(requiredPermission);
+  }
 
   useEffect(() => {
     if (isAuthenticated && !isAuthorized && !isLoading) {
-      toast.error('Acesso restrito a administradores.');
+      toast.error('Acesso insuficiente para esta funcionalidade.');
     }
   }, [isAuthenticated, isAuthorized, isLoading]);
 

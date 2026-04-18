@@ -43,8 +43,10 @@ export const Inventory = () => {
   const queryClient = useQueryClient();
 
   const canManageAssets = hasPermission('canManageAssets');
+  const canManageProducts = hasPermission('canManageProducts');
   const canManageCategories = hasPermission('canManageCategories');
   const canDelete = hasPermission('canDeleteItems');
+  const canExportData = hasPermission('canExportData');
 
   const [assetPage, setAssetPage] = useState(1);
   const [assetLimit, setAssetLimit] = useState(10);
@@ -406,25 +408,31 @@ export const Inventory = () => {
               />
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-              <button 
-                onClick={handleAssetExport}
-                disabled={isExporting}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
-              >
-                {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
-              </button>
-              <button 
-                onClick={() => { resetAssetCreate(); setIsAssetCreateModalOpen(true); }}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
-              >
-                <Plus size={18} /> Novo Ativo
-              </button>
-              <button 
-                onClick={() => setIsAssetBulkModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
-              >
-                <PackagePlus size={18} /> Cadastro em Lote
-              </button>
+              {canExportData && (
+                <button 
+                  onClick={handleAssetExport}
+                  disabled={isExporting}
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+                >
+                  {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
+                </button>
+              )}
+              {canManageAssets && (
+                <>
+                  <button 
+                    onClick={() => { resetAssetCreate(); setIsAssetCreateModalOpen(true); }}
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+                  >
+                    <Plus size={18} /> Novo Ativo
+                  </button>
+                  <button 
+                    onClick={() => setIsAssetBulkModalOpen(true)}
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+                  >
+                    <PackagePlus size={18} /> Cadastro em Lote
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -563,9 +571,11 @@ export const Inventory = () => {
                 onChange={(e) => handleProductSearch(e.target.value)}
               />
             </div>
-            <button onClick={() => { resetProduct(); setIsProductModalOpen(true); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center">
-              <PackagePlus size={18} /> Novo Modelo
-            </button>
+            {canManageProducts && (
+              <button onClick={() => { resetProduct(); setIsProductModalOpen(true); }} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center">
+                <PackagePlus size={18} /> Novo Modelo
+              </button>
+            )}
           </div>
 
           <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
@@ -637,7 +647,11 @@ export const Inventory = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-text-secondary font-mono">{product.brand || '---'}</td>
                         <td className="px-6 py-4 text-xs font-mono"><span className="px-3 py-1 rounded-full bg-hover-bg border border-border-primary text-text-secondary">{product.category.name}</span></td>
-                        <td className="px-6 py-4 flex justify-end"><button onClick={() => { setSelectedProduct(product); setIsProductDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button></td>
+                        <td className="px-6 py-4 flex justify-end gap-2">
+                          {canDelete && (
+                            <button onClick={() => { setSelectedProduct(product); setIsProductDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button>
+                          )}
+                        </td>
                       </tr>
                     ))
                   ) : (

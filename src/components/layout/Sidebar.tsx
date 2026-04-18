@@ -5,14 +5,14 @@ import { useAuthContext } from '../../contexts/AuthContext';
 import { Avatar } from '../ui/Avatar';
 
 export const Sidebar = () => {
-  const { logout, isAdmin } = useAuth();
+  const { logout, hasPermission } = useAuth();
   const { user } = useAuthContext();
 
   const links = [
-    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { to: '/inventory', label: 'Gerenciar Estoque', icon: Package },
-    { to: '/headsets', label: 'Headsets', icon: Headphones },
-    { to: '/computers', label: 'Computadores', icon: Monitor },
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'canViewReports' as keyof UserPermissions },
+    { to: '/inventory', label: 'Gerenciar Estoque', icon: Package, permission: 'canManageAssets' as keyof UserPermissions },
+    { to: '/headsets', label: 'Headsets', icon: Headphones, permission: 'canManageHeadsets' as keyof UserPermissions },
+    { to: '/computers', label: 'Computadores', icon: Monitor, permission: 'canManageComputers' as keyof UserPermissions },
   ];
 
   return (
@@ -28,21 +28,23 @@ export const Sidebar = () => {
 
       <nav className="p-6 space-y-2">
         {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              isActive
-                ? 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-primary-500 bg-primary-500/10 border border-primary-500/20 shadow-glow-purple transition-all duration-200'
-                : 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-all duration-200'
-            }
-          >
-            <link.icon className="w-5 h-5 mr-3" />
-            <span>{link.label}</span>
-          </NavLink>
+          (hasPermission(link.permission) || link.to === '/dashboard') && (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                isActive
+                  ? 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-primary-500 bg-primary-500/10 border border-primary-500/20 shadow-glow-purple transition-all duration-200'
+                  : 'flex items-center px-4 py-3.5 text-sm font-medium rounded-xl text-text-secondary hover:text-text-primary hover:bg-hover-bg transition-all duration-200'
+              }
+            >
+              <link.icon className="w-5 h-5 mr-3" />
+              <span>{link.label}</span>
+            </NavLink>
+          )
         ))}
 
-        {isAdmin && (
+        {hasPermission('canManageUsers') && (
           <NavLink
             to="/users"
             className={({ isActive }) =>
@@ -52,7 +54,7 @@ export const Sidebar = () => {
             }
           >
             <UsersIcon className="w-5 h-5 mr-3" />
-            <span>Gerenciar Usuários</span>
+            <span>Gestão de Acessos</span>
           </NavLink>
         )}
       </nav>

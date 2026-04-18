@@ -3,10 +3,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useUsers } from '../hooks/useUsers';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../hooks/useAuth';
 import { 
   Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, 
   Edit2, Shield, Users as UsersIcon, Save, RotateCcw, Package, Tag, 
-  ClipboardList, BarChart3, AlertTriangle, Plus 
+  ClipboardList, BarChart3, AlertTriangle, Plus, Monitor, Headphones, FileDown,
+  Trash
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -51,23 +53,55 @@ const PERMISSION_METADATA: PermissionConfig[] = [
     icon: ClipboardList 
   },
   { 
+    id: 'canManageComputers', 
+    label: 'Gerenciar Computadores', 
+    description: 'Controlar o inventário de computadores e periféricos',
+    icon: Monitor 
+  },
+  { 
+    id: 'canManageHeadsets', 
+    label: 'Gerenciar Headsets', 
+    description: 'Controlar o inventário de headsets e suas trocas',
+    icon: Headphones 
+  },
+  { 
     id: 'canDeleteItems', 
-    label: 'Exclusão de Itens', 
-    description: 'Permitir a exclusão definitiva de registros do estoque',
+    label: 'Exclusão Geral', 
+    description: 'Permitir a exclusão de registros básicos do estoque',
     icon: Trash2 
+  },
+  { 
+    id: 'canDeleteComputers', 
+    label: 'Excluir Computadores', 
+    description: 'Permitir a remoção definitiva de computadores',
+    icon: Trash 
+  },
+  { 
+    id: 'canDeleteHeadsets', 
+    label: 'Excluir Headsets', 
+    description: 'Permitir a remoção definitiva de headsets',
+    icon: Trash 
   },
   { 
     id: 'canViewReports', 
     label: 'Visualizar Relatórios', 
-    description: 'Acesso a dashboards detalhados e exportação de dados',
+    description: 'Acesso a dashboards detalhados e estatísticas',
     icon: BarChart3 
+  },
+  { 
+    id: 'canExportData', 
+    label: 'Exportar Dados', 
+    description: 'Permitir a exportação de dados em formatos CSV/Excel',
+    icon: FileDown 
   },
 ];
 
 type TabType = 'users' | 'permissions';
 
 export const Users = () => {
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('users');
+  const canManageUsers = hasPermission('canManageUsers');
   
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -91,6 +125,8 @@ export const Users = () => {
   const [isNewRoleModalOpen, setIsNewRoleModalOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [isCreatingRole, setIsCreatingRole] = useState(false);
+  const [isRoleDeleteConfirmOpen, setIsRoleDeleteConfirmOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
   const { usersData, isLoading: isUsersLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(
     page, 
@@ -206,6 +242,22 @@ export const Users = () => {
     }
   };
 
+  const handleDeleteRole = async () => {
+    if (!roleToDelete) return;
+    try {
+      await permissionService.deleteRole(roleToDelete.name);
+      toast.success('Cargo removido com sucesso!');
+      setIsRoleDeleteConfirmOpen(false);
+      setRoleToDelete(null);
+      if (activeRole === roleToDelete.name) {
+        setActiveRole('OPERATOR');
+      }
+      loadRoles();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao remover cargo.');
+    }
+  };
+
   const handleSearch = (value: string) => {
     setSearch(value);
     setPage(1);
@@ -300,15 +352,17 @@ export const Users = () => {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            <button 
-              onClick={() => {
-                resetCreate();
-                setIsNewUserModalOpen(true);
-              }} 
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center"
-            >
-              <UserPlus size={18} /> Novo Usuário
-            </button>
+            {canManageUsers && (
+              <button 
+                onClick={() => {
+                  resetCreate();
+                  setIsNewUserModalOpen(true);
+                }} 
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all w-full md:w-auto justify-center"
+              >
+                <UserPlus size={18} /> Novo Usuário
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
@@ -498,18 +552,48 @@ export const Users = () => {
               <h3 className="text-[10px] font-mono text-text-secondary uppercase tracking-[0.2em] ml-2">Cargos Disponíveis</h3>
               <div className="space-y-2">
                 {roles.map((role) => (
-                  <button
-                    key={role.id}
-                    onClick={() => setActiveRole(role.name)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
-                      activeRole === role.name 
-                        ? 'bg-primary-500/10 border-primary-500/30 text-primary-400 shadow-glow-purple/10' 
-                        : 'bg-hover-bg border-border-primary text-text-secondary hover:text-text-primary hover:border-border-secondary'
-                    }`}
-                  >
-                    <span className="text-xs font-bold font-mono tracking-wider uppercase">{role.name}</span>
-                    {activeRole === role.name && <ChevronRight size={14} />}
-                  </button>
+                  <div key={role.id} className="relative group/role">
+                    <button
+                      onClick={() => setActiveRole(role.name)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
+                        activeRole === role.name 
+                          ? 'bg-primary-500/10 border-primary-500/30 text-primary-400 shadow-glow-purple/10' 
+                          : 'bg-hover-bg border-border-primary text-text-secondary hover:text-text-primary hover:border-border-secondary'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-bold font-mono tracking-wider uppercase">{role.name}</span>
+                        {role._count && (
+                          <span className="text-[9px] font-mono text-text-secondary opacity-60">
+                            {role._count.users} {role._count.users === 1 ? 'usuário' : 'usuários'}
+                          </span>
+                        )}
+                      </div>
+                      {activeRole === role.name && <ChevronRight size={14} />}
+                    </button>
+                    
+                    {role.name !== 'ADMIN' && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (role._count && role._count.users > 0) {
+                            toast.error('Não é possível excluir um cargo com usuários vinculados.');
+                            return;
+                          }
+                          setRoleToDelete(role);
+                          setIsRoleDeleteConfirmOpen(true);
+                        }}
+                        className={`absolute -right-2 -top-2 p-1.5 rounded-lg bg-surface border border-border-primary text-text-secondary opacity-0 group-hover/role:opacity-100 transition-all z-10 ${
+                          role._count && role._count.users > 0 
+                            ? 'hover:text-amber-500 cursor-not-allowed' 
+                            : 'hover:text-red-500 shadow-sm'
+                        }`}
+                        title={role._count && role._count.users > 0 ? 'Possui usuários vinculados' : 'Excluir Cargo'}
+                      >
+                        <Trash size={12} />
+                      </button>
+                    )}
+                  </div>
                 ))}
                 <button
                   onClick={() => setIsNewRoleModalOpen(true)}
@@ -732,6 +816,14 @@ export const Users = () => {
         onConfirm={() => selectedUser && deleteUser(selectedUser.id)}
         title="Excluir Usuário"
         description={`Tem certeza que deseja remover o usuário "${selectedUser?.name}"?`}
+      />
+
+      <ConfirmDialog
+        isOpen={isRoleDeleteConfirmOpen}
+        onClose={() => setIsRoleDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteRole}
+        title="Excluir Cargo"
+        description={`Tem certeza que deseja remover o cargo "${roleToDelete?.name}"? Esta ação é irreversível.`}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import {
 
 import { useHeadsets, useHeadsetHistory } from '../hooks/useHeadsets';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../hooks/useAuth';
 
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ const DEFAULT_STATUS = { label: 'Desconhecido', color: 'bg-zinc-500/10 text-zinc
 
 export const Headsets = () => {
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -430,25 +432,31 @@ export const Headsets = () => {
         </div>
 
         <div className="flex gap-2 w-full md:w-auto">
-          <button 
-            onClick={handleHeadsetExport}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
-          >
-            {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
-          </button>
-          <button 
-            onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
-          >
-            <Plus size={18} /> Novo Headset
-          </button>
-          <button 
-            onClick={() => setIsBulkModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
-          >
-            <PackagePlus size={18} /> Cadastro em Lote
-          </button>
+          {hasPermission('canExportData') && (
+            <button 
+              onClick={handleHeadsetExport}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+            >
+              {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
+            </button>
+          )}
+          {hasPermission('canManageHeadsets') && (
+            <>
+              <button 
+                onClick={() => handleOpenModal()}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+              >
+                <Plus size={18} /> Novo Headset
+              </button>
+              <button 
+                onClick={() => setIsBulkModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+              >
+                <PackagePlus size={18} /> Cadastro em Lote
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -540,7 +548,8 @@ export const Headsets = () => {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">        <div className="overflow-x-auto">
+      <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
@@ -602,24 +611,28 @@ export const Headsets = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
-                        {headset.matricula ? (
-                          <button 
-                            onClick={() => { setSelectedHeadset(headset); setIsDisconnectModalOpen(true); }} 
-                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-zinc-100 hover:bg-zinc-800 transition-all"
-                            title="Desligar Operador"
-                          >
-                            <UserMinus size={14} />
-                          </button>
-                        ) : (
-                          headset.status === 'DISPONIVEL' && (
-                            <button 
-                              onClick={() => { setSelectedHeadset(headset); setIsConnectModalOpen(true); }} 
-                              className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-emerald-400 hover:bg-emerald-500/5 transition-all"
-                              title="Vincular Operador"
-                            >
-                              <UserPlus size={14} />
-                            </button>
-                          )
+                        {hasPermission('canManageHeadsets') && (
+                          <>
+                            {headset.matricula ? (
+                              <button 
+                                onClick={() => { setSelectedHeadset(headset); setIsDisconnectModalOpen(true); }} 
+                                className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-zinc-100 hover:bg-zinc-800 transition-all"
+                                title="Desligar Operador"
+                              >
+                                <UserMinus size={14} />
+                              </button>
+                            ) : (
+                              headset.status === 'DISPONIVEL' && (
+                                <button 
+                                  onClick={() => { setSelectedHeadset(headset); setIsConnectModalOpen(true); }} 
+                                  className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-emerald-400 hover:bg-emerald-500/5 transition-all"
+                                  title="Vincular Operador"
+                                >
+                                  <UserPlus size={14} />
+                                </button>
+                              )
+                            )}
+                          </>
                         )}
                         <button 
                           onClick={() => { setHeadsetForHistory(headset); setIsHistoryModalOpen(true); }} 
@@ -627,18 +640,22 @@ export const Headsets = () => {
                         >
                           <History size={14} />
                         </button>
-                        <button 
-                          onClick={() => handleOpenModal(headset)} 
-                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => { setSelectedHeadset(headset); setIsDeleteConfirmOpen(true); }} 
-                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {hasPermission('canManageHeadsets') && (
+                          <button 
+                            onClick={() => handleOpenModal(headset)} 
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+                        {hasPermission('canDeleteHeadsets') && (
+                          <button 
+                            onClick={() => { setSelectedHeadset(headset); setIsDeleteConfirmOpen(true); }} 
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -688,18 +705,22 @@ export const Headsets = () => {
               <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
             </div>
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsBulkUpdateModalOpen(true)} 
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
-              >
-                <Settings2 size={16} /> Alterar Status/Obs
-              </button>
-              <button 
-                onClick={() => setIsBulkDeleteConfirmOpen(true)} 
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
-              >
-                <Trash2 size={16} /> Excluir
-              </button>
+              {hasPermission('canManageHeadsets') && (
+                <button 
+                  onClick={() => setIsBulkUpdateModalOpen(true)} 
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+                >
+                  <Settings2 size={16} /> Alterar Status/Obs
+                </button>
+              )}
+              {hasPermission('canDeleteHeadsets') && (
+                <button 
+                  onClick={() => setIsBulkDeleteConfirmOpen(true)} 
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
+                >
+                  <Trash2 size={16} /> Excluir
+                </button>
+              )}
               <button onClick={() => setSelectedHeadsetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
                 <X size={20} />
               </button>

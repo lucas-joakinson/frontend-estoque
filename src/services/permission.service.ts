@@ -8,17 +8,24 @@ export const permissionService = {
   },
 
   async getRolePermissions(role: string): Promise<UserPermissions> {
-    const response = await api.get(`/permissions/${role}`);
+    const response = await api.get(`/permissions/${role.toUpperCase()}`);
     return response.data.permissions || response.data;
   },
 
-  async updateRolePermissions(role: string, permissions: UserPermissions): Promise<UserPermissions> {
-    const response = await api.patch(`/permissions/${role}`, permissions);
+  async updateRolePermissions(role: string, permissions: Partial<UserPermissions>): Promise<UserPermissions> {
+    const response = await api.patch(`/permissions/${role.toUpperCase()}`, permissions);
     return response.data;
   },
 
-  async createRole(name: string): Promise<Role> {
-    const response = await api.post('/permissions/roles', { name });
+  async createRole(name: string, permissions?: Partial<UserPermissions>): Promise<Role> {
+    const response = await api.post('/permissions/roles', { 
+      name: name.toUpperCase(),
+      permissions 
+    });
     return response.data;
+  },
+
+  async deleteRole(role: string): Promise<void> {
+    await api.delete(`/permissions/${role.toUpperCase()}`);
   },
 };

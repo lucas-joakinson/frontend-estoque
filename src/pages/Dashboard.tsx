@@ -9,6 +9,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useAssets, useAssetStats } from '../hooks/useAssets';
 import { useHeadsetStats } from '../hooks/useHeadsets';
 import { useComputerStats } from '../hooks/useComputers';
+import { useAuth } from '../hooks/useAuth';
 import { Skeleton } from '../components/ui/Skeleton';
 import type { AssetStatus, HeadsetStatus, ComputerStatus } from '../types';
 import { 
@@ -62,7 +63,24 @@ const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primar
 );
 
 export const Dashboard = () => {
+  const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<DashboardTab>('geral');
+
+  if (!hasPermission('canViewReports')) {
+    return (
+      <div className="h-[70vh] flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in duration-500">
+        <div className="w-20 h-20 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500 border border-red-500/20">
+          <XCircle size={40} />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-bold text-text-primary uppercase tracking-tight">Acesso Restrito</h2>
+          <p className="text-text-secondary font-mono text-xs uppercase tracking-widest max-w-xs mx-auto">
+            Você não possui permissão para visualizar relatórios e estatísticas do sistema.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const { productsData, isLoading: loadingProducts } = useProducts(1, 10);
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 10);

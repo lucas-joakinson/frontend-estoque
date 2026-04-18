@@ -10,6 +10,7 @@ import {
 
 import { useComputers, useComputerHistory } from '../hooks/useComputers';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../hooks/useAuth';
 
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ const STATUS_LABELS: Record<ComputerStatus, { label: string; color: string }> = 
 
 export const Computers = () => {
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuth();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
@@ -302,13 +304,15 @@ export const Computers = () => {
         </div>
 
         <div className="flex gap-2 w-full md:w-auto">
-          <button 
-            onClick={handleComputerExport}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
-          >
-            {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
-          </button>
+          {hasPermission('canExportData') && (
+            <button 
+              onClick={handleComputerExport}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+            >
+              {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
+            </button>
+          )}
           <button 
             onClick={() => handleOpenModal()}
             className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
@@ -450,18 +454,22 @@ export const Computers = () => {
                         >
                           <History size={14} />
                         </button>
-                        <button 
-                          onClick={() => handleOpenModal(comp)} 
-                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button 
-                          onClick={() => { setSelectedComputer(comp); setIsDeleteConfirmOpen(true); }} 
-                          className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {hasPermission('canManageComputers') && (
+                          <button 
+                            onClick={() => handleOpenModal(comp)} 
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                        )}
+                        {hasPermission('canDeleteComputers') && (
+                          <button 
+                            onClick={() => { setSelectedComputer(comp); setIsDeleteConfirmOpen(true); }} 
+                            className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

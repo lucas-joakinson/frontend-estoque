@@ -64,7 +64,8 @@ function AppContent() {
             <Route path="/computers" element={<Computers />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Gerenciar Usuários" requiredRole="ADMIN" />}>            <Route path="/users" element={<Users />} />
+          <Route element={<ProtectedRoute title="Gestão de Acessos" requiredPermission="canManageUsers" />}>
+            <Route path="/users" element={<Users />} />
           </Route>
 
           <Route element={<ProtectedRoute title="Meu Perfil" />}>
