@@ -410,7 +410,7 @@ export const Computers = () => {
                 <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                    className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" 
                     checked={!!(computersData?.computers && computersData.computers.length > 0 && selectedComputerIds.length === computersData.computers.length)} 
                     onChange={toggleSelectAllComputers} 
                   />
@@ -440,12 +440,7 @@ export const Computers = () => {
                 computersData.computers.map((comp) => (
                   <tr key={comp.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedComputerIds.includes(comp.id) ? 'bg-primary-500/5' : ''}`}>
                     <td className="px-6 py-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
-                        checked={selectedComputerIds.includes(comp.id)} 
-                        onChange={() => toggleSelectOneComputer(comp.id)} 
-                      />
+                      <input type="checkbox" checked={selectedComputerIds.includes(comp.id)} onChange={() => toggleSelectOneComputer(comp.id)} />
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">
                       <span className="px-2 py-1 rounded bg-hover-bg border border-border-primary font-mono text-xs">

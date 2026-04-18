@@ -572,7 +572,7 @@ export const Headsets = () => {
                 <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
                   <input 
                     type="checkbox" 
-                    className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
+                    className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" 
                     checked={!!(headsetsData?.headsets && headsetsData.headsets.length > 0 && selectedHeadsetIds.length === headsetsData.headsets.length)} 
                     onChange={toggleSelectAllHeadsets} 
                   />
@@ -604,12 +604,7 @@ export const Headsets = () => {
                 headsetsData.headsets.map((headset) => (
                   <tr key={headset.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedHeadsetIds.includes(headset.id) ? 'bg-primary-500/5' : ''}`}>
                     <td className="px-6 py-4 text-center">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" 
-                        checked={selectedHeadsetIds.includes(headset.id)} 
-                        onChange={() => toggleSelectOneHeadset(headset.id)} 
-                      />
+                      <input type="checkbox" checked={selectedHeadsetIds.includes(headset.id)} onChange={() => toggleSelectOneHeadset(headset.id)} />
                     </td>
                     <td className="px-6 py-4 text-sm font-bold text-text-primary">
                       {headset.matricula || <span className="text-text-secondary/40 font-mono text-xs uppercase italic">---</span>}

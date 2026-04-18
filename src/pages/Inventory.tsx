@@ -502,7 +502,7 @@ export const Inventory = () => {
                 <thead className="bg-hover-bg">
                   <tr>
                     <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
-                      <input type="checkbox" className="w-4 h-4 rounded border-border-primary bg-background text-primary-500" checked={!!(assetsData?.assets && assetsData.assets.length > 0 && selectedAssetIds.length === assetsData.assets.length)} onChange={toggleSelectAllAssets} />
+                      <input type="checkbox" className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" checked={!!(assetsData?.assets && assetsData.assets.length > 0 && selectedAssetIds.length === assetsData.assets.length)} onChange={toggleSelectAllAssets} />
                     </th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Patrimônio</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Item / Marca</th>
@@ -528,7 +528,7 @@ export const Inventory = () => {
                   ) : assetsData?.assets && assetsData.assets.length > 0 ? (
                     assetsData.assets.map((asset) => (
                       <tr key={asset.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedAssetIds.includes(asset.id) ? 'bg-primary-500/5' : ''}`}>
-                        <td className="px-6 py-4 text-center"><input type="checkbox" className="w-4 h-4 rounded border-border-primary bg-background text-primary-500 cursor-pointer" checked={selectedAssetIds.includes(asset.id)} onChange={() => toggleSelectOneAsset(asset.id)} /></td>
+                        <td className="px-6 py-4 text-center"><input type="checkbox" checked={selectedAssetIds.includes(asset.id)} onChange={() => toggleSelectOneAsset(asset.id)} /></td>
                         <td className="px-6 py-4 text-center"><span className="px-3 py-1 rounded bg-hover-bg border border-border-primary font-mono font-bold text-primary-400 text-xs">{asset.patrimonio}</span></td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">

@@ -106,11 +106,9 @@ export const Dashboard = () => {
     );
   }
 
-  // Permissões específicas
   const canManageHeadsets = hasPermission('canManageHeadsets');
   const canManageComputers = hasPermission('canManageComputers');
 
-  // Queries
   const { isLoading: loadingProducts } = useProducts(1, 10);
   const { categoriesData, isLoading: loadingCategories } = useCategories(1, 10);
   const { assetsData, isLoading: loadingAssets } = useAssets(1, 10, '', undefined, undefined, 'updatedAt', 'desc');
@@ -255,18 +253,18 @@ export const Dashboard = () => {
                 <History size={18} className="text-primary-400" />
                 <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Atualizações Recentes</h3>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-1">
                 {recentAssets.map((asset) => (
                   <div 
-                    key={asset.id} 
+                    key={asset.id}
                     onClick={() => handleNavigate('/inventory', { search: asset.patrimonio })}
-                    className="flex items-center justify-between p-3 rounded-2xl bg-hover-bg/50 border border-border-primary/50 cursor-pointer hover:bg-hover-bg transition-colors"
-                  >
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-hover-bg transition-colors cursor-pointer group"
+                    >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-surface border border-border-primary flex items-center justify-center font-mono font-bold text-primary-400 text-xs">{asset.patrimonio}</div>
+                      <div className="font-mono font-bold text-zinc-500 group-hover:text-primary-400 text-xs transition-colors">{asset.patrimonio}</div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold text-text-primary">{asset.product?.name || 'Sem nome'}</span>
-                        <span className="text-[10px] font-mono text-text-secondary uppercase">{asset.responsible || 'Sem responsável'}</span>
+                        <span className="text-xs font-bold text-text-primary">{asset.product?.name || '---'}</span>
+                        <span className="text-[10px] font-mono text-text-secondary uppercase">{asset.responsible || '---'}</span>
                       </div>
                     </div>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold border ${ASSET_STATUS_LABELS[asset.status]?.color || 'border-zinc-500/20 text-zinc-400 bg-zinc-500/10'}`}>
