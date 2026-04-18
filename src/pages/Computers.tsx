@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useSearchParams } from 'react-router-dom';
 import { 
   Search, Trash2, ChevronLeft, ChevronRight, 
   Plus, Edit2, SlidersHorizontal, Filter, 
@@ -37,11 +38,26 @@ const STATUS_LABELS: Record<ComputerStatus, { label: string; color: string }> = 
 export const Computers = () => {
   const queryClient = useQueryClient();
   const { hasPermission } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const debouncedSearch = useDebounce(search, 500);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedSearch) params.set('search', debouncedSearch); else params.delete('search');
+    if (statusFilter) params.set('status', statusFilter); else params.delete('status');
+    setSearchParams(params, { replace: true });
+  }, [debouncedSearch, statusFilter]);
+
+  useEffect(() => {
+    const s = searchParams.get('search') || '';
+    const st = searchParams.get('status') || '';
+    if (s !== search) setSearch(s);
+    if (st !== statusFilter) setStatusFilter(st);
+  }, [searchParams]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Package, Tag, MapPin, History, BarChart3, 
   PieChart as PieChartIcon, LayoutDashboard, Headphones, Monitor, 
@@ -44,8 +45,11 @@ const COMPUTER_STATUS_LABELS: Record<ComputerStatus, { label: string; color: str
   'Troca pendente': { label: 'Troca Pendente', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', hex: '#71717a' },
 };
 
-const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primary-400", bgClass = "bg-primary-500/10" }: { label: string; value: number; icon: any; loading: boolean; colorClass?: string; bgClass?: string }) => (
-  <div className="p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group">
+const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primary-400", bgClass = "bg-primary-500/10", onClick }: { label: string; value: number; icon: any; loading: boolean; colorClass?: string; bgClass?: string; onClick?: () => void }) => (
+  <div 
+    onClick={onClick}
+    className={`p-6 rounded-3xl bg-surface border border-border-primary hover:border-primary-500/20 hover:shadow-glow-purple/10 transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
+  >
     <div className={`w-12 h-12 rounded-2xl ${bgClass} flex items-center justify-center ${colorClass} group-hover:scale-110 transition-transform`}>
       <Icon size={24} />
     </div>
@@ -64,7 +68,13 @@ const StatCard = ({ label, value, icon: Icon, loading, colorClass = "text-primar
 
 export const Dashboard = () => {
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<DashboardTab>('geral');
+
+  const handleNavigate = (path: string, params: Record<string, string>) => {
+    const searchParams = new URLSearchParams(params);
+    navigate(`${path}?${searchParams.toString()}`);
+  };
 
   if (!hasPermission('canViewReports')) {
     return (
@@ -105,10 +115,10 @@ export const Dashboard = () => {
   , [computerStatsData]);
 
   const generalStats = useMemo(() => [
-    { label: 'Total de Ativos', value: totalAssets, icon: Boxes, loading: loadingAssetStats || loadingAssets },
-    { label: 'Total de Headsets', value: totalHeadsets, icon: Headphones, loading: loadingHeadsets },
-    { label: 'Total de Computadores', value: totalComputers, icon: Monitor, loading: loadingComputers },
-  ], [totalAssets, totalHeadsets, totalComputers, loadingAssetStats, loadingAssets, loadingHeadsets, loadingComputers]);
+    { label: 'Total de Ativos', value: totalAssets, icon: Boxes, loading: loadingAssetStats || loadingAssets, onClick: () => navigate('/inventory') },
+    { label: 'Total de Headsets', value: totalHeadsets, icon: Headphones, loading: loadingHeadsets, onClick: () => navigate('/headsets') },
+    { label: 'Total de Computadores', value: totalComputers, icon: Monitor, loading: loadingComputers, onClick: () => navigate('/computers') },
+  ], [totalAssets, totalHeadsets, totalComputers, loadingAssetStats, loadingAssets, loadingHeadsets, loadingComputers, navigate]);
 
   const assetStatusData = useMemo(() => {
     if (assetStatsData) {
@@ -241,7 +251,11 @@ export const Dashboard = () => {
               </div>
               <div className="space-y-4">
                 {recentAssets.map((asset) => (
-                  <div key={asset.id} className="flex items-center justify-between p-3 rounded-2xl bg-hover-bg/50 border border-border-primary/50">
+                  <div 
+                    key={asset.id} 
+                    onClick={() => handleNavigate('/inventory', { search: asset.patrimonio })}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-hover-bg/50 border border-border-primary/50 cursor-pointer hover:bg-hover-bg transition-colors"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-surface border border-border-primary flex items-center justify-center font-mono font-bold text-primary-400 text-xs">{asset.patrimonio}</div>
                       <div className="flex flex-col">
@@ -265,8 +279,8 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatCard label="Modelos Únicos" value={productsData?.pagination?.total || 0} icon={Package} loading={loadingProducts} />
             <StatCard label="Categorias" value={categoriesData?.pagination?.total || 0} icon={Tag} loading={loadingCategories} />
-            <StatCard label="Em Uso" value={assetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingAssetStats} colorClass="text-blue-400" bgClass="bg-blue-500/10" />
-            <StatCard label="Disponíveis" value={assetStatsData?.['DISPONIVEL'] || 0} icon={Tag} loading={loadingAssetStats} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" />
+            <StatCard label="Em Uso" value={assetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingAssetStats} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/inventory', { status: 'EM_USO' })} />
+            <StatCard label="Disponíveis" value={assetStatsData?.['DISPONIVEL'] || 0} icon={Tag} loading={loadingAssetStats} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/inventory', { status: 'DISPONIVEL' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -312,9 +326,10 @@ export const Dashboard = () => {
       {activeTab === 'headsets' && (
         <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {headsetStats.map((stat, i) => (
-              <StatCard key={i} {...stat} loading={loadingHeadsets} />
-            ))}
+            <StatCard label="Em Uso" value={headsetStatsData?.['EM_USO'] || 0} icon={CheckCircle2} loading={loadingHeadsets} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_USO' })} />
+            <StatCard label="Em Manutenção" value={headsetStatsData?.['EM_MANUTENCAO'] || 0} icon={Hammer} loading={loadingHeadsets} colorClass="text-orange-400" bgClass="bg-orange-500/10" onClick={() => handleNavigate('/headsets', { status: 'EM_MANUTENCAO' })} />
+            <StatCard label="Com Defeito" value={headsetStatsData?.['DEFEITO'] || 0} icon={AlertTriangle} loading={loadingHeadsets} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/headsets', { status: 'DEFEITO' })} />
+            <StatCard label="Disponível" value={(headsetStatsData?.['DISPONIVEL'] || 0) + (headsetStatsData?.['RESERVA'] || 0)} icon={Tag} loading={loadingHeadsets} colorClass="text-zinc-400" bgClass="bg-zinc-500/10" onClick={() => handleNavigate('/headsets', { status: 'DISPONIVEL' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -364,9 +379,10 @@ export const Dashboard = () => {
       {activeTab === 'computadores' && (
         <div className="space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {computerStats.map((stat, i) => (
-              <StatCard key={i} {...stat} loading={loadingComputers} />
-            ))}
+            <StatCard label="Em Uso" value={computerStatsData?.['Em uso'] || 0} icon={CheckCircle2} loading={loadingComputers} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" onClick={() => handleNavigate('/computers', { status: 'Em uso' })} />
+            <StatCard label="Em Estoque" value={computerStatsData?.['Em estoque'] || 0} icon={Tag} loading={loadingComputers} colorClass="text-blue-400" bgClass="bg-blue-500/10" onClick={() => handleNavigate('/computers', { status: 'Em estoque' })} />
+            <StatCard label="Manutenção" value={computerStatsData?.['Manutenção'] || 0} icon={Hammer} loading={loadingComputers} colorClass="text-amber-400" bgClass="bg-amber-500/10" onClick={() => handleNavigate('/computers', { status: 'Manutenção' })} />
+            <StatCard label="Com Defeito" value={computerStatsData?.['Defeito'] || 0} icon={XCircle} loading={loadingComputers} colorClass="text-red-400" bgClass="bg-red-500/10" onClick={() => handleNavigate('/computers', { status: 'Defeito' })} />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

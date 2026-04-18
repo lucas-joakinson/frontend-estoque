@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { 
   Search, Trash2, PackagePlus, ChevronLeft, ChevronRight, Package, 
@@ -48,12 +49,33 @@ export const Inventory = () => {
   const canDelete = hasPermission('canDeleteItems');
   const canExportData = hasPermission('canExportData');
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [assetPage, setAssetPage] = useState(1);
   const [assetLimit, setAssetLimit] = useState(10);
-  const [assetSearch, setAssetSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  
+  const [assetSearch, setAssetSearch] = useState(searchParams.get('search') || '');
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+  const [categoryFilter, setCategoryFilter] = useState(searchParams.get('category') || '');
+  
   const debouncedAssetSearch = useDebounce(assetSearch, 500);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    if (debouncedAssetSearch) params.set('search', debouncedAssetSearch); else params.delete('search');
+    if (statusFilter) params.set('status', statusFilter); else params.delete('status');
+    if (categoryFilter) params.set('category', categoryFilter); else params.delete('category');
+    setSearchParams(params, { replace: true });
+  }, [debouncedAssetSearch, statusFilter, categoryFilter]);
+
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const category = searchParams.get('category') || '';
+    if (search !== assetSearch) setAssetSearch(search);
+    if (status !== statusFilter) setStatusFilter(status);
+    if (category !== categoryFilter) setCategoryFilter(category);
+  }, [searchParams]);
+
   const [isExporting, setIsExporting] = useState(false);
   
   const [isAssetCreateModalOpen, setIsAssetCreateModalOpen] = useState(false);
