@@ -8,13 +8,13 @@ export const useNotifications = () => {
   const summaryQuery = useQuery({
     queryKey: ['notifications', 'summary'],
     queryFn: () => notificationService.getSummary(),
-    refetchInterval: 120000, // 2 minutes
+    refetchInterval: 30000, // 30 seconds
   });
 
   const recentActivitiesQuery = useQuery({
     queryKey: ['notifications', 'activities'],
     queryFn: () => notificationService.getRecentActivities(),
-    refetchInterval: 120000,
+    refetchInterval: 30000,
   });
 
   const settingsQuery = useQuery({
@@ -39,8 +39,6 @@ export const useNotifications = () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', 'activities'] });
     },
     onError: () => {
-      // Mesmo se falhar no back (ex: rota não existe ainda), 
-      // podemos invalidar para manter o front limpo se o usuário desejar
       queryClient.invalidateQueries({ queryKey: ['notifications', 'activities'] });
     },
   });
@@ -50,8 +48,13 @@ export const useNotifications = () => {
     activities: recentActivitiesQuery.data,
     settings: settingsQuery.data,
     isLoading: summaryQuery.isLoading || recentActivitiesQuery.isLoading,
+    isRefetching: summaryQuery.isRefetching || recentActivitiesQuery.isRefetching,
     updateSettings: updateSettingsMutation.mutate,
     isUpdating: updateSettingsMutation.isPending,
     clearActivities: clearActivitiesMutation.mutate,
+    refetch: () => {
+      summaryQuery.refetch();
+      recentActivitiesQuery.refetch();
+    },
   };
 };

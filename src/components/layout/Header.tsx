@@ -10,9 +10,16 @@ interface HeaderProps {
 
 export const Header = ({ title }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
-  const { summary, activities, clearActivities } = useNotifications();
+  const { summary, activities, clearActivities, refetch, isRefetching } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleToggleNotifications = () => {
+    if (!showNotifications) {
+      refetch();
+    }
+    setShowNotifications(!showNotifications);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -63,10 +70,10 @@ export const Header = ({ title }: HeaderProps) => {
 
         <div className="relative" ref={dropdownRef}>
           <button 
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={handleToggleNotifications}
             className="p-2.5 rounded-xl bg-hover-bg border border-border-primary hover:border-primary-500/30 text-text-secondary hover:text-primary-400 transition-all relative"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className={`w-5 h-5 ${isRefetching ? 'animate-pulse text-primary-400' : ''}`} />
             {summary && summary.unread_count > 0 && (
               <span className="absolute top-2 right-2 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background">
                 {summary.unread_count}
