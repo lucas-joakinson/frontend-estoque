@@ -8,7 +8,7 @@ import {
   Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, 
   Edit2, Shield, Users as UsersIcon, Save, RotateCcw, Package, Tag, 
   ClipboardList, BarChart3, AlertTriangle, Plus, Monitor, Headphones, FileDown,
-  Trash
+  Trash, X
 } from 'lucide-react';
 import { Skeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/ConfirmDialog';
@@ -16,7 +16,9 @@ import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
 import { Avatar } from '../components/ui/Avatar';
 import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import { permissionService } from '../services/permission.service';
+import { userService } from '../services/user.service';
 import type { User, UserPermissions, Role } from '../types';
 import { createUserSchema, updateUserSchema, type CreateUserInput, type UpdateUserInput } from '../schemas/user.schema';
 
@@ -99,6 +101,7 @@ const PERMISSION_METADATA: PermissionConfig[] = [
 type TabType = 'users' | 'permissions';
 
 export const Users = () => {
+  const queryClient = useQueryClient();
   const { hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('users');
   const canManageUsers = hasPermission('canManageUsers');
@@ -128,6 +131,12 @@ export const Users = () => {
   const [isRoleDeleteConfirmOpen, setIsRoleDeleteConfirmOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState<Role | null>(null);
 
+  // Seleção em massa
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [isBulkRoleModalOpen, setIsBulkRoleModalOpen] = useState(false);
+  const [bulkRole, setBulkRole] = useState('');
+  const [isProcessingBulk, setIsProcessingBulk] = useState(false);
+
   const { usersData, isLoading: isUsersLoading, deleteUser, createUser, isCreating, updateUser, isUpdating } = useUsers(
     page, 
     limit, 
@@ -136,6 +145,36 @@ export const Users = () => {
     sortBy, 
     order
   );
+
+  const toggleSelectAllUsers = () => {
+    if (selectedUserIds.length === (usersData?.users.length || 0)) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(usersData?.users.map(u => u.id) || []);
+    }
+  };
+
+  const toggleSelectOneUser = (id: string) => {
+    setSelectedUserIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkUpdateRole = async () => {
+    if (!bulkRole || selectedUserIds.length === 0) return;
+    setIsProcessingBulk(true);
+    const toastId = toast.loading(`Atualizando cargo de ${selectedUserIds.length} usuários...`);
+    try {
+      await userService.bulkUpdateRoles(selectedUserIds, bulkRole);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success('Cargos atualizados com sucesso!', { id: toastId });
+      setSelectedUserIds([]);
+      setIsBulkRoleModalOpen(false);
+      setBulkRole('');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro na atualização em massa.', { id: toastId });
+    } finally {
+      setIsProcessingBulk(false);
+    }
+  };
 
   const {
     register: registerCreate,
@@ -441,6 +480,13 @@ export const Users = () => {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-hover-bg">
                   <tr>
+                    <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={!!(usersData?.users && usersData.users.length > 0 && selectedUserIds.length === usersData.users.length)} 
+                        onChange={toggleSelectAllUsers} 
+                      />
+                    </th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Usuário</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Matrícula</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Cargo</th>
@@ -452,6 +498,7 @@ export const Users = () => {
                   {isUsersLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
+                        <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
                         <td className="px-6 py-4 flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-4 w-32" /></td>
                         <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
                         <td className="px-6 py-4"><Skeleton className="h-6 w-20" /></td>
@@ -461,7 +508,10 @@ export const Users = () => {
                     ))
                   ) : usersData?.users && usersData.users.length > 0 ? (
                     usersData.users.map((user: User) => (
-                      <tr key={user.id} className="hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group">
+                      <tr key={user.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group ${selectedUserIds.includes(user.id) ? 'bg-primary-500/5' : ''}`}>
+                        <td className="px-6 py-4 text-center">
+                          <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleSelectOneUser(user.id)} />
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <Avatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
@@ -511,7 +561,7 @@ export const Users = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
+                      <td colSpan={6} className="px-6 py-12 text-center text-text-secondary font-mono text-sm italic">
                         Nenhum usuário encontrado.
                       </td>
                     </tr>
@@ -544,6 +594,58 @@ export const Users = () => {
               </div>
             </div>
           )}
+
+          {/* Ações em Massa */}
+          {selectedUserIds.length > 0 && (
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+              <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
+                <div className="flex items-center gap-2 border-r border-primary-400 pr-6">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedUserIds.length}</div>
+                  <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsBulkRoleModalOpen(true)} 
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+                  >
+                    <Shield size={16} /> Alterar Cargos
+                  </button>
+                  <button onClick={() => setSelectedUserIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Alteração de Cargo em Massa */}
+          <Modal isOpen={isBulkRoleModalOpen} onClose={() => !isProcessingBulk && setIsBulkRoleModalOpen(false)} title={`Alterar Cargo de ${selectedUserIds.length} Usuários`}>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest px-1">Selecione o Novo Cargo</label>
+                <select 
+                  className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary-500/50 uppercase" 
+                  value={bulkRole} 
+                  onChange={(e) => setBulkRole(e.target.value)}
+                >
+                  <option value="">Selecione...</option>
+                  {roles.map(role => (
+                    <option key={role.id} value={role.name}>{role.name}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-amber-500 font-mono mt-2 px-1 leading-relaxed">
+                  * O cargo do administrador mestre e o seu próprio cargo não serão alterados por segurança.
+                </p>
+              </div>
+              <button 
+                onClick={handleBulkUpdateRole} 
+                disabled={isProcessingBulk || !bulkRole} 
+                className="w-full py-4 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-widest transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12 disabled:opacity-50"
+              >
+                {isProcessingBulk ? <Spinner /> : 'Confirmar Alteração'}
+              </button>
+            </div>
+          </Modal>
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in slide-in-from-bottom-4 duration-500">

@@ -45,6 +45,10 @@ export const userService = {
     await api.patch('/users/password', data);
   },
 
+  async bulkUpdateRoles(userIds: string[], role: string): Promise<void> {
+    await api.patch('/users/bulk-roles', { userIds, role });
+  },
+
   async uploadAvatar(file: File): Promise<User> {
     const formData = new FormData();
     formData.append('file', file);
