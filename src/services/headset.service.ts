@@ -1,5 +1,5 @@
 import api from '../lib/api';
-import type { Headset, HeadsetsResponse, HeadsetHistory } from '../types';
+import type { Headset, HeadsetsResponse, HeadsetHistory, HeadsetStatus } from '../types';
 
 export const headsetService = {
   async listHeadsets(
@@ -55,13 +55,11 @@ export const headsetService = {
       const LIMIT_PER_REQUEST = 100;
       let allHeadsets: Headset[] = [];
       
-      // Primeira requisição para saber o total de páginas
       const firstResponse = await this.listHeadsets(1, LIMIT_PER_REQUEST, search, status);
       allHeadsets = [...firstResponse.headsets];
       
       const totalPages = firstResponse.pagination.totalPages;
 
-      // Busca as páginas restantes, se houver
       if (totalPages > 1) {
         const remainingPagesPromises = [];
         for (let p = 2; p <= totalPages; p++) {
@@ -78,8 +76,8 @@ export const headsetService = {
       const rows = allHeadsets.map(headset => [
         headset.matricula || '',
         headset.lacre || '',
-        headset.brand || '',
-        headset.serialNumber || '',
+        headset.marca || '',
+        headset.numeroSerie || '',
         headset.status
       ]);
 
@@ -99,7 +97,7 @@ export const headsetService = {
       link.click();
       document.body.removeChild(link);
     } catch (error: any) {
-      console.error('Erro na exportação:', error);
+      console.error('Export error:', error);
       throw error;
     }
   },
