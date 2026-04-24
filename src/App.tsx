@@ -60,19 +60,19 @@ function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Gerenciar Estoque (Geral)" />}>
+          <Route element={<ProtectedRoute title="Gerenciar Estoque" requiredPermission={['canViewAssets', 'canManageAssets']} />}>
             <Route path="/inventory" element={<Inventory />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Headsets" />}>
+          <Route element={<ProtectedRoute title="Headsets" requiredPermission={['canViewHeadsets', 'canManageHeadsets']} />}>
             <Route path="/headsets" element={<Headsets />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Computadores" />}>
+          <Route element={<ProtectedRoute title="Computadores" requiredPermission={['canViewComputers', 'canManageComputers']} />}>
             <Route path="/computers" element={<Computers />} />
           </Route>
 
-          <Route element={<ProtectedRoute title="Gestão de Acessos" requiredPermission="canManageUsers" />}>
+          <Route element={<ProtectedRoute title="Gestão de Acessos" requiredPermission={['canViewUsers', 'canViewPermissions']} />}>
             <Route path="/users" element={<Users />} />
           </Route>
 

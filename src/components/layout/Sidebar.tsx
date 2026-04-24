@@ -20,9 +20,9 @@ export const Sidebar = () => {
   const links = [
     { to: '/', label: 'Início', icon: House },
     { to: '/dashboard', label: 'Estatísticas', icon: LayoutDashboard, permission: 'canViewReports' as keyof UserPermissions },
-    { to: '/inventory', label: 'Gerenciar Estoque', icon: Package, permission: 'canManageAssets' as keyof UserPermissions },
-    { to: '/headsets', label: 'Headsets', icon: Headphones, permission: 'canManageHeadsets' as keyof UserPermissions },
-    { to: '/computers', label: 'Computadores', icon: Monitor, permission: 'canManageComputers' as keyof UserPermissions },
+    { to: '/inventory', label: 'Gerenciar Estoque', icon: Package, permission: 'canViewAssets' as keyof UserPermissions },
+    { to: '/headsets', label: 'Headsets', icon: Headphones, permission: 'canViewHeadsets' as keyof UserPermissions },
+    { to: '/computers', label: 'Computadores', icon: Monitor, permission: 'canViewComputers' as keyof UserPermissions },
   ];
 
   return (
@@ -64,7 +64,7 @@ export const Sidebar = () => {
           )
         ))}
 
-        {hasPermission('canManageUsers') && (
+        {(hasPermission('canViewUsers') || hasPermission('canViewPermissions')) && (
           <NavLink
             to="/users"
             onClick={handleLinkClick}

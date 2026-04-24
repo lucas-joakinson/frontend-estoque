@@ -559,7 +559,7 @@ export const Inventory = () => {
                             {canManageAssets && (
                               <button onClick={() => { setSelectedAsset(asset); setIsAssetEditModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"><Edit2 size={14} /></button>
                             )}
-                            {canDelete && (
+                            {canDelete && canManageAssets && (
                               <button onClick={() => { setSelectedAsset(asset); setIsAssetDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button>
                             )}
                           </div>
@@ -678,7 +678,7 @@ export const Inventory = () => {
                         <td className="px-6 py-4 text-sm text-text-secondary font-mono">{product.brand || '---'}</td>
                         <td className="px-6 py-4 text-xs font-mono"><span className="px-3 py-1 rounded-full bg-hover-bg border border-border-primary text-text-secondary">{product.category.name}</span></td>
                         <td className="px-6 py-4 flex justify-end gap-2">
-                          {canDelete && (
+                          {canManageProducts && canDelete && (
                             <button onClick={() => { setSelectedProduct(product); setIsProductDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={14} /></button>
                           )}
                         </td>
@@ -781,7 +781,7 @@ export const Inventory = () => {
                             {canManageCategories && (
                               <button onClick={() => { setSelectedCategory(c); setIsCatModalOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 transition-all"><Edit2 size={16} /></button>
                             )}
-                            {canDelete && (
+                            {canDelete && canManageCategories && (
                               <button onClick={() => { setSelectedCategory(c); setIsCatDeleteConfirmOpen(true); }} className="p-2 rounded-lg bg-hover-bg border border-border-primary text-text-secondary hover:text-red-400 transition-all"><Trash2 size={16} /></button>
                             )}
                           </div>
@@ -1001,7 +1001,7 @@ export const Inventory = () => {
         </form>
       </Modal>
 
-      {selectedAssetIds.length > 0 && (
+      {selectedAssetIds.length > 0 && canManageAssets && (
         <div className="fixed bottom-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
           <div className="bg-primary-600 text-white p-4 md:px-6 md:py-4 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center gap-4 md:gap-6 border border-primary-400 font-mono">
             <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r border-primary-400 pb-2 md:pb-0 md:pr-6 w-full md:w-auto justify-center">

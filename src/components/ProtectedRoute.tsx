@@ -12,7 +12,7 @@ import type { UserPermissions } from '../types';
 interface ProtectedRouteProps {
   title: string;
   requiredRole?: 'ADMIN' | 'OPERATOR';
-  requiredPermission?: keyof UserPermissions;
+  requiredPermission?: keyof UserPermissions | (keyof UserPermissions)[];
 }
 
 export const ProtectedRoute = ({ title, requiredRole, requiredPermission }: ProtectedRouteProps) => {
@@ -28,7 +28,11 @@ export const ProtectedRoute = ({ title, requiredRole, requiredPermission }: Prot
     isAuthorized = isAdmin;
   }
   if (requiredPermission) {
-    isAuthorized = hasPermission(requiredPermission);
+    if (Array.isArray(requiredPermission)) {
+      isAuthorized = requiredPermission.some(p => hasPermission(p));
+    } else {
+      isAuthorized = hasPermission(requiredPermission);
+    }
   }
 
   useEffect(() => {

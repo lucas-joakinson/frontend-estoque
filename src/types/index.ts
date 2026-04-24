@@ -1,15 +1,21 @@
 export interface UserPermissions {
+  canViewUsers: boolean;
   canManageUsers: boolean;
+  canViewPermissions: boolean;
+  canViewAssets: boolean;
   canManageProducts: boolean;
   canManageCategories: boolean;
   canManageAssets: boolean;
   canDeleteItems: boolean;
   canViewReports: boolean;
+  canViewComputers: boolean;
   canManageComputers: boolean;
   canDeleteComputers: boolean;
+  canViewHeadsets: boolean;
   canManageHeadsets: boolean;
   canDeleteHeadsets: boolean;
   canExportData: boolean;
+  canViewNotifications: boolean;
   canManageNotifications: boolean;
 }
 
