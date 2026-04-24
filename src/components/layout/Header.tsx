@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Moon, Sun, AlertTriangle, Info, Clock } from 'lucide-react';
+import { Bell, Moon, Sun, AlertTriangle, Info, Clock, Menu } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useSidebar } from '../../contexts/SidebarContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { Link } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ interface HeaderProps {
 
 export const Header = ({ title }: HeaderProps) => {
   const { theme, toggleTheme } = useTheme();
+  const { toggleSidebar } = useSidebar();
   const { summary, activities, clearActivities, refetch, isRefetching } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -47,15 +49,25 @@ export const Header = ({ title }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-8 bg-background/80 backdrop-blur-md border-b border-border-primary transition-colors duration-300">
-      <div>
-        <h2 className="text-xl font-bold text-text-primary leading-tight">{title}</h2>
-        <p className="text-[11px] font-mono text-text-secondary uppercase tracking-widest mt-0.5">
-          {getSubtitle()}
-        </p>
+    <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-4 md:px-8 bg-background/80 backdrop-blur-md border-b border-border-primary transition-colors duration-300">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={toggleSidebar}
+          className="p-2.5 rounded-xl bg-hover-bg border border-border-primary hover:border-primary-500/30 text-text-secondary hover:text-primary-400 transition-all"
+          title="Alternar menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div>
+          <h2 className="text-lg md:text-xl font-bold text-text-primary leading-tight">{title}</h2>
+          <p className="hidden md:block text-[11px] font-mono text-text-secondary uppercase tracking-widest mt-0.5">
+            {getSubtitle()}
+          </p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         <button 
           onClick={toggleTheme}
           className="p-2.5 rounded-xl bg-hover-bg border border-border-primary hover:border-primary-500/30 text-text-secondary hover:text-primary-400 transition-all"

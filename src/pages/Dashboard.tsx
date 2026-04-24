@@ -189,23 +189,23 @@ export const Dashboard = () => {
           </p>
         </div>
 
-        <div className="flex p-1 bg-surface border border-border-primary rounded-2xl overflow-x-auto no-scrollbar">
+        <div className="flex flex-col md:flex-row p-1 bg-surface border border-border-primary rounded-2xl overflow-hidden">
           <button
             onClick={() => setActiveTab('geral')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'geral' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'geral' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <LayoutDashboard size={14} /> GERAL
           </button>
           <button
             onClick={() => setActiveTab('estoque')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'estoque' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'estoque' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <Boxes size={14} /> ESTOQUE
           </button>
           {canManageHeadsets && (
             <button
               onClick={() => setActiveTab('headsets')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'headsets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'headsets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <Headphones size={14} /> HEADSETS
             </button>
@@ -213,7 +213,7 @@ export const Dashboard = () => {
           {canManageComputers && (
             <button
               onClick={() => setActiveTab('computadores')}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'computadores' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${activeTab === 'computadores' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
             >
               <Monitor size={14} /> COMPUTADORES
             </button>

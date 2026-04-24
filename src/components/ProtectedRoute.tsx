@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useAuthContext } from '../contexts/AuthContext';
 import { useAuth } from '../hooks/useAuth';
 import { Spinner } from './ui/Spinner';
+import { useSidebar } from '../contexts/SidebarContext';
 import type { UserPermissions } from '../types';
 
 interface ProtectedRouteProps {
@@ -16,6 +17,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ title, requiredRole, requiredPermission }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuthContext();
+  const { isOpen, closeSidebar } = useSidebar();
   const { hasPermission } = useAuth();
   const token = localStorage.getItem('token');
   
@@ -58,10 +60,18 @@ export const ProtectedRoute = ({ title, requiredRole, requiredPermission }: Prot
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px] lg:hidden transition-opacity"
+          onClick={closeSidebar}
+        />
+      )}
+
       <Sidebar />
-      <div className="flex flex-col flex-1 overflow-hidden ml-72">
+      <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${isOpen ? 'lg:ml-72' : 'ml-0'}`}>
         <Header title={title} />
-        <main className="flex-1 overflow-y-auto p-8 grid-bg">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 grid-bg">
           <Outlet />
         </main>
       </div>

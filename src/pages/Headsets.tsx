@@ -447,29 +447,29 @@ export const Headsets = () => {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           {hasPermission('canExportData') && (
             <button 
               onClick={handleHeadsetExport}
               disabled={isExporting}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+              className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto"
             >
-              {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
+              {isExporting ? <Spinner size={18} /> : <Download size={18} />} <span>Exportar</span>
             </button>
           )}
           {hasPermission('canManageHeadsets') && (
             <>
               <button 
                 onClick={() => handleOpenModal()}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto"
               >
-                <Plus size={18} /> Novo Headset
+                <Plus size={18} /> <span>Novo Headset</span>
               </button>
               <button 
                 onClick={() => setIsBulkModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+                className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all justify-center w-full md:w-auto"
               >
-                <PackagePlus size={18} /> Cadastro em Lote
+                <PackagePlus size={18} /> <span>Cadastro em Lote</span>
               </button>
             </>
           )}
@@ -488,9 +488,9 @@ export const Headsets = () => {
           />
         </div>
 
-        <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm w-full md:w-auto">
-          <div className="flex flex-wrap items-center gap-6">
-            <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+        <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-col gap-6 shadow-sm w-full md:w-auto">
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-border-primary pb-4 md:pb-0 md:pr-6">
               <div className="flex items-center gap-2 text-text-secondary">
                 <SlidersHorizontal size={16} />
                 <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
@@ -507,60 +507,49 @@ export const Headsets = () => {
                 ))}
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-text-secondary">
+            <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+              <div className="flex items-center gap-2 text-text-secondary shrink-0">
                 <Filter size={14} className="text-primary-400" />
                 <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
               </div>
-              <select 
-                value={statusFilter} 
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); setSelectedHeadsetIds([]); }} 
-                className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
-              >
-                <option value="">Status</option>
-                {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
-                  <option key={val} value={val}>{label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-text-secondary">
-                <SlidersHorizontal size={14} className="text-primary-400" />
-                <span className="text-xs font-mono uppercase tracking-widest">Ordem:</span>
+              <div className="flex flex-col md:flex-row gap-3 w-full">
+                <select 
+                  value={statusFilter} 
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); setSelectedHeadsetIds([]); }} 
+                  className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto"
+                >
+                  <option value="">Status</option>
+                  {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
+                </select>
+                <select 
+                  value={`${sortBy}-${order}`} 
+                  onChange={(e) => {
+                    const [newSortBy, newOrder] = e.target.value.split('-');
+                    setSortBy(newSortBy);
+                    setOrder(newOrder as 'asc' | 'desc');
+                    setPage(1);
+                  }} 
+                  className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto"
+                >
+                  <option value="createdAt-desc">Mais Recentes</option>
+                  <option value="createdAt-asc">Mais Antigos</option>
+                  <option value="lacre-asc">Lacre (A-Z)</option>
+                  <option value="marca-asc">Marca (A-Z)</option>
+                  <option value="matricula-asc">Matrícula (A-Z)</option>
+                </select>
               </div>
-              <select 
-                value={`${sortBy}-${order}`} 
-                onChange={(e) => {
-                  const [newSortBy, newOrder] = e.target.value.split('-');
-                  setSortBy(newSortBy);
-                  setOrder(newOrder as 'asc' | 'desc');
-                  setPage(1);
-                }} 
-                className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer"
-              >
-                <option value="createdAt-desc">Mais Recentes</option>
-                <option value="createdAt-asc">Mais Antigos</option>
-                <option value="lacre-asc">Lacre (A-Z)</option>
-                <option value="marca-asc">Marca (A-Z)</option>
-                <option value="matricula-asc">Matrícula (A-Z)</option>
-              </select>
             </div>
-            {(search || statusFilter || sortBy !== 'createdAt' || order !== 'desc') && (
-              <button 
-                onClick={() => { 
-                  setSearch(''); 
-                  setStatusFilter(''); 
-                  setSortBy('createdAt');
-                  setOrder('desc');
-                  setPage(1); 
-                  setSelectedHeadsetIds([]); 
-                }} 
-                className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
-              >
-                Limpar Filtros
-              </button>
-            )}
           </div>
+          {(search || statusFilter || sortBy !== 'createdAt' || order !== 'desc') && (
+            <button 
+              onClick={() => { setSearch(''); setStatusFilter(''); setSortBy('createdAt'); setOrder('desc'); setPage(1); setSelectedHeadsetIds([]); }} 
+              className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest self-start"
+            >
+              Limpar Filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -709,27 +698,27 @@ export const Headsets = () => {
 
       {/* Ações em Massa */}
       {selectedHeadsetIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
-          <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
-            <div className="flex items-center gap-2 border-r border-primary-400 pr-6">
+        <div className="fixed bottom-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white p-4 md:px-6 md:py-4 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center gap-4 md:gap-6 border border-primary-400 font-mono">
+            <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r border-primary-400 pb-2 md:pb-0 md:pr-6 w-full md:w-auto justify-center">
               <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedHeadsetIds.length}</div>
               <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto">
               {hasPermission('canManageHeadsets') && (
                 <button 
                   onClick={() => setIsBulkUpdateModalOpen(true)} 
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest"
                 >
-                  <Settings2 size={16} /> Alterar Status/Obs
+                  <Settings2 size={16} /> <span className="hidden xs:inline">Alterar</span>
                 </button>
               )}
               {hasPermission('canDeleteHeadsets') && (
                 <button 
                   onClick={() => setIsBulkDeleteConfirmOpen(true)} 
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"
+                  className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest"
                 >
-                  <Trash2 size={16} /> Excluir
+                  <Trash2 size={16} /> <span className="hidden xs:inline">Excluir</span>
                 </button>
               )}
               <button onClick={() => setSelectedHeadsetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">

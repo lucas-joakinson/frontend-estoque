@@ -14,6 +14,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { PublicRoute } from './components/PublicRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { SidebarProvider } from './contexts/SidebarContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,7 +31,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ThemeProvider>
-            <AppContent />
+            <SidebarProvider>
+              <AppContent />
+            </SidebarProvider>
           </ThemeProvider>
         </BrowserRouter>
       </QueryClientProvider>

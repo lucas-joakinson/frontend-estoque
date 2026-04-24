@@ -5,7 +5,7 @@ import { useUsers } from '../hooks/useUsers';
 import { useDebounce } from '../hooks/useDebounce';
 import { useAuth } from '../hooks/useAuth';
 import { 
-  Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, 
+  Search, Trash2, UserPlus, ChevronLeft, ChevronRight, SlidersHorizontal, Filter,
   Edit2, Shield, Users as UsersIcon, Save, RotateCcw, Package, Tag, 
   ClipboardList, BarChart3, AlertTriangle, Plus, Monitor, Headphones, FileDown,
   Trash, X
@@ -404,9 +404,9 @@ export const Users = () => {
             )}
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+          <div className="bg-surface p-4 rounded-2xl border border-border-primary shadow-sm flex flex-col gap-6">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+              <div className="flex items-center gap-4 border-b lg:border-b-0 lg:border-r border-border-primary pb-4 lg:pb-0 lg:pr-6">
                 <div className="flex items-center gap-2 text-text-secondary">
                   <SlidersHorizontal size={16} />
                   <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
@@ -428,51 +428,55 @@ export const Users = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-text-secondary">
-                  <span className="text-xs font-mono uppercase tracking-widest">Cargo:</span>
+              <div className="flex flex-col md:flex-row lg:items-center gap-4 w-full">
+                <div className="flex items-center gap-2 text-text-secondary shrink-0">
+                  <Filter size={14} className="text-primary-400" />
+                  <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
                 </div>
-                <select
-                  className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer uppercase"
-                  value={roleFilter}
-                  onChange={(e) => handleRoleFilterChange(e.target.value)}
-                >
-                  <option value="">Todos</option>
-                  {roles.map(role => (
-                    <option key={role.id} value={role.name}>{role.name}</option>
-                  ))}
-                </select>
-              </div>
+                <div className="flex flex-col md:flex-row gap-3 w-full">
+                  <div className="flex flex-col gap-2 w-full md:w-auto">
+                    <span className="text-[10px] font-mono text-text-secondary uppercase md:hidden">Cargo:</span>
+                    <select
+                      className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer uppercase w-full md:w-auto"
+                      value={roleFilter}
+                      onChange={(e) => handleRoleFilterChange(e.target.value)}
+                    >
+                      <option value="">Todos os cargos</option>
+                      {roles.map(role => (
+                        <option key={role.id} value={role.name}>{role.name}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              {(search || roleFilter) && (
-                <button
-                  onClick={clearFilters}
-                  className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2"
-                >
-                  Limpar Filtros
-                </button>
-              )}
+                  <div className="flex flex-col gap-2 w-full md:w-auto">
+                    <span className="text-[10px] font-mono text-text-secondary uppercase md:hidden">Ordenar:</span>
+                    <select
+                      className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 w-full md:w-auto"
+                      value={`${sortBy}-${order}`}
+                      onChange={(e) => {
+                        const [s, o] = e.target.value.split('-');
+                        setSortBy(s);
+                        setOrder(o);
+                      }}
+                    >
+                      <option value="createdAt-desc">Mais Recentes</option>
+                      <option value="createdAt-asc">Mais Antigos</option>
+                      <option value="name-asc">Nome (A-Z)</option>
+                      <option value="name-desc">Nome (Z-A)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-text-secondary">
-                <span className="text-xs font-mono uppercase tracking-widest">Ordenar:</span>
-              </div>
-              <select
-                className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50"
-                value={`${sortBy}-${order}`}
-                onChange={(e) => {
-                  const [s, o] = e.target.value.split('-');
-                  setSortBy(s);
-                  setOrder(o);
-                }}
+            {(search || roleFilter) && (
+              <button
+                onClick={clearFilters}
+                className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest self-start"
               >
-                <option value="createdAt-desc">Mais Recentes</option>
-                <option value="createdAt-asc">Mais Antigos</option>
-                <option value="name-asc">Nome (A-Z)</option>
-                <option value="name-desc">Nome (Z-A)</option>
-              </select>
-            </div>
+                Limpar Filtros
+              </button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
@@ -719,27 +723,27 @@ export const Users = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-6">
-            <div className="bg-surface border border-border-primary rounded-3xl p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="bg-surface border border-border-primary rounded-3xl p-6 md:p-8 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-primary-500/10 text-primary-400 border border-primary-500/20">
+                <div className="p-3 rounded-2xl bg-primary-500/10 text-primary-400 border border-primary-500/20 shrink-0">
                   <Shield size={24} />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-text-primary uppercase">Permissões de {activeRole}</h3>
-                  <p className="text-xs text-text-secondary mt-1">Configure o nível de acesso para este cargo</p>
+                <div className="min-w-0">
+                  <h3 className="text-lg md:text-xl font-bold text-text-primary uppercase truncate">Permissões de {activeRole}</h3>
+                  <p className="text-[10px] md:text-xs text-text-secondary mt-1">Configure o nível de acesso para este cargo</p>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                 <button
                   onClick={() => loadPermissions(activeRole)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-hover-bg text-text-secondary border border-border-primary font-mono text-[10px] font-bold uppercase tracking-widest hover:text-text-primary transition-all"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-hover-bg text-text-secondary border border-border-primary font-mono text-[10px] font-bold uppercase tracking-widest hover:text-text-primary transition-all"
                 >
-                  <RotateCcw size={14} /> Resetar
+                  <RotateCcw size={14} /> <span className="sm:inline">Resetar</span>
                 </button>
                 <button
                   onClick={handleSavePermissions}
                   disabled={isSavingPermissions || isPermissionsLoading}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary-500 text-white shadow-glow-purple font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-primary-400 transition-all disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-primary-500 text-white shadow-glow-purple font-mono text-[10px] font-bold uppercase tracking-widest hover:bg-primary-400 transition-all disabled:opacity-50 flex-1 md:flex-none"
                 >
                   {isSavingPermissions ? <Spinner size={14} /> : (
                     <>

@@ -392,24 +392,24 @@ export const Inventory = () => {
           </p>
         </div>
 
-        <div className="flex p-1 bg-surface border border-border-primary rounded-2xl">
+        <div className="flex flex-col md:flex-row p-1 bg-surface border border-border-primary rounded-2xl overflow-hidden">
           <button
             onClick={() => setActiveTab('assets')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'assets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'assets' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <ClipboardList size={14} />
             ATIVOS
           </button>
           <button
             onClick={() => setActiveTab('products')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'products' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'products' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <Package size={14} />
             ITENS
           </button>
           <button
             onClick={() => setActiveTab('categories')}
-            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'categories' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
+            className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-mono font-bold transition-all ${activeTab === 'categories' ? 'bg-primary-500 text-white shadow-glow-purple' : 'text-text-secondary hover:text-text-primary'}`}
           >
             <Tag size={14} />
             CATEGORIAS
@@ -430,38 +430,41 @@ export const Inventory = () => {
                 onChange={(e) => handleAssetSearch(e.target.value)}
               />
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
               {canExportData && (
                 <button 
                   onClick={handleAssetExport}
                   disabled={isExporting}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+                  className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto"
                 >
-                  {isExporting ? <Spinner size={18} /> : <Download size={18} />} Exportar
+                  {isExporting ? <Spinner size={18} /> : <Download size={18} />} 
+                  <span>Exportar</span>
                 </button>
               )}
               {canManageAssets && (
                 <>
                   <button 
                     onClick={() => { resetAssetCreate(); setIsAssetCreateModalOpen(true); }}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all flex-1 md:flex-none justify-center"
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto"
                   >
-                    <Plus size={18} /> Novo Ativo
+                    <Plus size={18} />
+                    <span>Novo Ativo</span>
                   </button>
                   <button 
                     onClick={() => setIsAssetBulkModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all flex-1 md:flex-none justify-center"
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold text-sm uppercase tracking-wider shadow-glow-purple transition-all justify-center w-full md:w-auto"
                   >
-                    <PackagePlus size={18} /> Cadastro em Lote
+                    <PackagePlus size={18} />
+                    <span>Cadastro em Lote</span>
                   </button>
                 </>
               )}
             </div>
           </div>
 
-          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-col gap-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-border-primary pb-4 md:pb-0 md:pr-6">
                 <div className="flex items-center gap-2 text-text-secondary">
                   <SlidersHorizontal size={16} />
                   <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
@@ -472,28 +475,30 @@ export const Inventory = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-text-secondary">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+                <div className="flex items-center gap-2 text-text-secondary shrink-0">
                   <Filter size={14} className="text-primary-400" />
                   <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
                 </div>
-                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setAssetPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="">Status</option>
-                  {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
-                    <option key={val} value={val}>{label}</option>
-                  ))}
-                </select>
-                <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setAssetPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="">Categoria</option>
-                  {categoriesData?.categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                <div className="flex flex-col md:flex-row gap-3 w-full">
+                  <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setAssetPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="">Status</option>
+                    {Object.entries(STATUS_LABELS).map(([val, { label }]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                  <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setAssetPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="">Categoria</option>
+                    {categoriesData?.categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              {(assetSearch || statusFilter || categoryFilter) && (
-                <button onClick={() => { setAssetSearch(''); setStatusFilter(''); setCategoryFilter(''); setAssetPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar Filtros</button>
-              )}
             </div>
+            {(assetSearch || statusFilter || categoryFilter) && (
+              <button onClick={() => { setAssetSearch(''); setStatusFilter(''); setCategoryFilter(''); setAssetPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest self-start">Limpar Filtros</button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
@@ -601,9 +606,9 @@ export const Inventory = () => {
             )}
           </div>
 
-          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-col gap-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-border-primary pb-4 md:pb-0 md:pr-6">
                 <div className="flex items-center gap-2 text-text-secondary">
                   <SlidersHorizontal size={16} />
                   <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
@@ -614,30 +619,32 @@ export const Inventory = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-text-secondary">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+                <div className="flex items-center gap-2 text-text-secondary shrink-0">
                   <Filter size={14} className="text-primary-400" />
                   <span className="text-xs font-mono uppercase tracking-widest">Filtros:</span>
                 </div>
-                <select value={productCategoryFilter} onChange={(e) => { setProductCategoryFilter(e.target.value); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="">Categoria</option>
-                  {categoriesData?.categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-                <select value={productSortBy} onChange={(e) => { setProductSortBy(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="name">Nome</option>
-                  <option value="createdAt">Data</option>
-                </select>
-                <select value={productOrder} onChange={(e) => { setProductOrder(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="asc">Crescente</option>
-                  <option value="desc">Decrescente</option>
-                </select>
+                <div className="flex flex-col md:flex-row gap-3 w-full">
+                  <select value={productCategoryFilter} onChange={(e) => { setProductCategoryFilter(e.target.value); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="">Categoria</option>
+                    {categoriesData?.categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <select value={productSortBy} onChange={(e) => { setProductSortBy(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="name">Nome</option>
+                    <option value="createdAt">Data</option>
+                  </select>
+                  <select value={productOrder} onChange={(e) => { setProductOrder(e.target.value as any); setProductPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="asc">Crescente</option>
+                    <option value="desc">Decrescente</option>
+                  </select>
+                </div>
               </div>
-              {(productSearch || productCategoryFilter) && (
-                <button onClick={() => { setProductSearch(''); setProductCategoryFilter(''); setProductPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar Filtros</button>
-              )}
             </div>
+            {(productSearch || productCategoryFilter) && (
+              <button onClick={() => { setProductSearch(''); setProductCategoryFilter(''); setProductPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest self-start">Limpar Filtros</button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
@@ -717,9 +724,9 @@ export const Inventory = () => {
             )}
           </div>
 
-          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-6">
-              <div className="flex items-center gap-4 border-r border-border-primary pr-6">
+          <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-col gap-6 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-border-primary pb-4 md:pb-0 md:pr-6">
                 <div className="flex items-center gap-2 text-text-secondary">
                   <SlidersHorizontal size={16} />
                   <span className="text-xs font-mono uppercase tracking-widest">Exibir:</span>
@@ -730,20 +737,22 @@ export const Inventory = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-text-secondary">
+              <div className="flex flex-col md:flex-row md:items-center gap-4 w-full">
+                <div className="flex items-center gap-2 text-text-secondary shrink-0">
                   <Filter size={14} className="text-primary-400" />
                   <span className="text-xs font-mono uppercase tracking-widest">Ordem:</span>
                 </div>
-                <select value={catOrder} onChange={(e) => { setCatOrder(e.target.value as any); setCatPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer">
-                  <option value="asc">A-Z (Crescente)</option>
-                  <option value="desc">Z-A (Decrescente)</option>
-                </select>
+                <div className="flex flex-col md:flex-row gap-3 w-full">
+                  <select value={catOrder} onChange={(e) => { setCatOrder(e.target.value as any); setCatPage(1); }} className="bg-hover-bg border border-border-primary rounded-xl px-4 py-2 text-xs font-mono font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer w-full md:w-auto">
+                    <option value="asc">A-Z (Crescente)</option>
+                    <option value="desc">Z-A (Decrescente)</option>
+                  </select>
+                </div>
               </div>
-              {catSearch && (
-                <button onClick={() => { setCatSearch(''); setCatPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest pl-2 border-l border-border-primary ml-2">Limpar</button>
-              )}
             </div>
+            {catSearch && (
+              <button onClick={() => { setCatSearch(''); setCatPage(1); }} className="text-[10px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase tracking-widest self-start">Limpar</button>
+            )}
           </div>
 
           <div className="rounded-2xl border border-border-primary overflow-hidden bg-surface shadow-sm">
@@ -993,13 +1002,22 @@ export const Inventory = () => {
       </Modal>
 
       {selectedAssetIds.length > 0 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
-          <div className="bg-primary-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-primary-400 font-mono">
-            <div className="flex items-center gap-2 border-r border-primary-400 pr-6"><div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedAssetIds.length}</div><span className="text-sm font-bold uppercase tracking-wider">Selecionados</span></div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setIsBulkUpdateModalOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-xs uppercase tracking-widest"><Settings2 size={16} /> Alterar Status/Local</button>
-              <button onClick={() => setIsBulkDeleteConfirmOpen(true)} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-xs uppercase tracking-widest"><Trash2 size={16} /> Excluir</button>
-              <button onClick={() => setSelectedAssetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={20} /></button>
+        <div className="fixed bottom-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white p-4 md:px-6 md:py-4 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center gap-4 md:gap-6 border border-primary-400 font-mono">
+            <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r border-primary-400 pb-2 md:pb-0 md:pr-6 w-full md:w-auto justify-center">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedAssetIds.length}</div>
+              <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto">
+              <button onClick={() => setIsBulkUpdateModalOpen(true)} className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                <Settings2 size={16} /> <span className="hidden xs:inline">Alterar</span>
+              </button>
+              <button onClick={() => setIsBulkDeleteConfirmOpen(true)} className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                <Trash2 size={16} /> <span className="hidden xs:inline">Excluir</span>
+              </button>
+              <button onClick={() => setSelectedAssetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
             </div>
           </div>
         </div>
