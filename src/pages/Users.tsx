@@ -636,7 +636,151 @@ export const Users = () => {
           </div>
         </div>
       )}
-      {/* Modais de Novo Usuário e Edição protegidos por canManageUsers */}
+      {/* Modal Novo Usuário */}
+      <Modal 
+        isOpen={isNewUserModalOpen} 
+        onClose={() => setIsNewUserModalOpen(false)} 
+        title="Novo Usuário"
+      >
+        <form onSubmit={handleSubmitCreate(onSubmitCreate)} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
+            <input 
+              type="text" 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.name ? 'border-red-500' : 'border-border-primary'}`} 
+              {...registerCreate('name')} 
+            />
+            {createErrors.name && <span className="text-[10px] text-red-500 font-mono">{createErrors.name.message}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula</label>
+            <input 
+              type="text" 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.matricula ? 'border-red-500' : 'border-border-primary'}`} 
+              {...registerCreate('matricula')} 
+            />
+            {createErrors.matricula && <span className="text-[10px] text-red-500 font-mono">{createErrors.matricula.message}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Senha Inicial</label>
+            <input 
+              type="password" 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${createErrors.password ? 'border-red-500' : 'border-border-primary'}`} 
+              {...registerCreate('password')} 
+            />
+            {createErrors.password && <span className="text-[10px] text-red-500 font-mono">{createErrors.password.message}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Cargo</label>
+            <select 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+              {...registerCreate('role')}
+            >
+              {roles.map(role => (
+                <option key={role.id} value={role.name}>{role.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={isCreating}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12"
+          >
+            {isCreating ? <Spinner /> : 'Criar Usuário'}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Modal Editar Usuário */}
+      <Modal 
+        isOpen={isEditUserModalOpen} 
+        onClose={() => { setIsEditUserModalOpen(false); setSelectedUser(null); }} 
+        title={`Editar: ${selectedUser?.name}`}
+      >
+        <form onSubmit={handleSubmitEdit(onSubmitEdit)} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome Completo</label>
+            <input 
+              type="text" 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.name ? 'border-red-500' : 'border-border-primary'}`} 
+              {...registerEdit('name')} 
+            />
+            {editErrors.name && <span className="text-[10px] text-red-500 font-mono">{editErrors.name.message}</span>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nova Senha (deixe em branco para manter)</label>
+            <input 
+              type="password" 
+              className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${editErrors.password ? 'border-red-500' : 'border-border-primary'}`} 
+              {...registerEdit('password')} 
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Cargo</label>
+            <select 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+              {...registerEdit('role')}
+            >
+              {roles.map(role => (
+                <option key={role.id} value={role.name}>{role.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <button 
+            type="submit" 
+            disabled={isUpdating}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12"
+          >
+            {isUpdating ? <Spinner /> : 'Salvar Alterações'}
+          </button>
+        </form>
+      </Modal>
+
+      {/* Modal Novo Cargo */}
+      <Modal isOpen={isNewRoleModalOpen} onClose={() => setIsNewRoleModalOpen(false)} title="Criar Novo Cargo">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nome do Cargo</label>
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 uppercase" 
+              placeholder="EX: SUPERVISOR"
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={handleCreateRole}
+            disabled={isCreatingRole || !newRoleName.trim()}
+            className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-wider transition-all shadow-glow-purple flex items-center justify-center h-12 disabled:opacity-50"
+          >
+            {isCreatingRole ? <Spinner /> : 'Criar Cargo'}
+          </button>
+        </div>
+      </Modal>
+
+      <ConfirmDialog 
+        isOpen={isConfirmOpen} 
+        onClose={() => setIsConfirmOpen(false)} 
+        onConfirm={() => selectedUser && deleteUser(selectedUser.id)} 
+        title="Excluir Usuário" 
+        description={`Tem certeza que deseja remover o usuário ${selectedUser?.name}?`} 
+      />
+
+      <ConfirmDialog
+        isOpen={isRoleDeleteConfirmOpen}
+        onClose={() => setIsRoleDeleteConfirmOpen(false)}
+        onConfirm={handleDeleteRole}
+        title="Excluir Cargo"
+        description={`Tem certeza que deseja remover o cargo "${roleToDelete?.name}"? Esta ação é irreversível.`}
+      />
     </div>
   );
 };

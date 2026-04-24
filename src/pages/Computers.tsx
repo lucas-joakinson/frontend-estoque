@@ -56,13 +56,6 @@ export const Computers = () => {
     setSearchParams(params, { replace: true });
   }, [debouncedSearch, statusFilter]);
 
-  useEffect(() => {
-    const s = searchParams.get('search') || '';
-    const st = searchParams.get('status') || '';
-    if (s !== search) setSearch(s);
-    if (st !== statusFilter) setStatusFilter(st);
-  }, [searchParams]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [selectedComputer, setSelectedComputer] = useState<Computer | null>(null);
@@ -196,7 +189,7 @@ export const Computers = () => {
         </div>
         <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
           {canExportData && (
-            <button onClick={handleComputerExport} disabled={isExporting} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-text-primary font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto">
+            <button onClick={handleComputerExport} disabled={isExporting} className="flex items-center gap-2 px-5 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 font-mono font-bold text-sm uppercase tracking-wider transition-all justify-center w-full md:w-auto">
               {isExporting ? <Spinner size={18} /> : <Download size={18} />} <span>Exportar</span>
             </button>
           )}
@@ -294,8 +287,8 @@ export const Computers = () => {
         <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
           <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">Página {page} de {computersData.pagination.totalPages}</span>
           <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronLeft size={20} /></button>
-            <button disabled={page >= computersData.pagination.totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronRight size={20} /></button>
+            <button disabled={page === 1} onClick={() => { setPage(p => p - 1); setSelectedComputerIds([]); }} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronLeft size={20} /></button>
+            <button disabled={page >= computersData.pagination.totalPages} onClick={() => { setPage(p => p + 1); setSelectedComputerIds([]); }} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronRight size={20} /></button>
           </div>
         </div>
       )}
@@ -379,11 +372,35 @@ export const Computers = () => {
         </form>
       </Modal>
 
-      <Modal isOpen={isBulkModalOpen} onClose={() => !isBulkCreating && setIsBulkModalOpen(false)} title="Importar Computadores">
+      <Modal isOpen={isBulkModalOpen} onClose={() => !isBulkCreating && setIsBulkModalOpen(false)} title="Importar Computadores (.xlsx)">
         <div className="space-y-6">
-          <input type="file" accept=".xlsx" onChange={handleFileUpload} className="w-full" />
-          {bulkErrors.length > 0 && <div className="text-red-500 text-xs">{bulkErrors.map((e, i) => <div key={i}>{e.errors.join(', ')}</div>)}</div>}
-          <button onClick={onBulkSubmit} disabled={isBulkCreating || parsedComputers.length === 0} className="w-full py-3 rounded-xl bg-primary-500 text-white font-mono font-bold uppercase shadow-glow-purple">Confirmar Importação ({parsedComputers.length})</button>
+          <div className="space-y-4">
+            <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary">
+              <h4 className="text-[10px] font-mono font-bold text-primary-400 uppercase tracking-widest mb-3">Formato da Planilha:</h4>
+              <p className="text-[10px] font-mono text-text-primary font-bold tracking-widest bg-surface px-3 py-2 rounded-lg border border-border-primary uppercase">
+                PATRIMÔNIO | HOSTNAME | STATUS | LOCALIZAÇÃO | OBSERVAÇÕES
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={onBulkSubmit} className="space-y-6">
+            <div className="relative group">
+              <input type="file" accept=".xlsx" onChange={handleFileUpload} disabled={isParsing || isBulkCreating} className="w-full px-4 py-8 rounded-2xl bg-hover-bg border-2 border-dashed border-border-primary text-text-secondary font-mono text-xs cursor-pointer file:hidden hover:border-primary-500/50 transition-all text-center" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2">
+                <PackagePlus className="text-text-secondary group-hover:text-primary-400 transition-colors" size={24} />
+                <span className="text-[10px] uppercase tracking-widest font-bold">Clique para selecionar o arquivo .xlsx</span>
+              </div>
+            </div>
+
+            {isParsing && <div className="flex flex-col items-center justify-center py-6 gap-3 animate-pulse"><Spinner size={24} /><span className="text-[10px] font-mono text-primary-400 uppercase tracking-widest">Processando...</span></div>}
+            {bulkErrors.length > 0 && <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-400 text-[10px] font-mono max-h-[150px] overflow-y-auto">{bulkErrors.map((err, i) => <div key={i}>Linha {err.row}: {err.errors.join(', ')}</div>)}</div>}
+
+            {parsedComputers.length > 0 && bulkErrors.length === 0 && (
+              <button type="submit" disabled={isBulkCreating} className="w-full py-4 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center gap-2 h-14">
+                {isBulkCreating ? <Spinner /> : <><ClipboardList size={18} /> Confirmar Importação ({parsedComputers.length})</>}
+              </button>
+            )}
+          </form>
         </div>
       </Modal>
 

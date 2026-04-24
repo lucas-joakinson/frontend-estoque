@@ -25,7 +25,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { headsetService } from '../services/headset.service';
 import { headsetSchema, type HeadsetInput } from '../schemas/headset.schema';
 
-import type { Headset, HeadsetStatus, UserPermissions } from '../types';
+import type { Headset, HeadsetStatus } from '../types';
 
 const STATUS_LABELS: Record<HeadsetStatus, { label: string; color: string }> = {
   'EM_USO': { label: 'Em Uso', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
@@ -304,7 +304,13 @@ export const Headsets = () => {
     bulkCreateHeadset(parsedHeadsets as any, { onSuccess: () => { setIsBulkModalOpen(false); setParsedHeadsets([]); setBulkErrors([]); } });
   };
 
-  const handleCloseBulkModal = () => { if (!isBulkCreating && !isParsing) { setIsBulkModalOpen(false); setParsedHeadsets([]); setBulkErrors([]); } };
+  const handleCloseBulkModal = () => {
+    if (!isBulkCreating && !isParsing) {
+      setIsBulkModalOpen(false);
+      setParsedHeadsets([]);
+      setBulkErrors([]);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -337,7 +343,6 @@ export const Headsets = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary-400 transition-colors" size={18} />
           <input type="text" placeholder="Buscar por matrícula, lacre, série..." className="w-full pl-12 pr-4 py-3 rounded-2xl bg-hover-bg border border-border-primary text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all font-mono text-sm" value={search} onChange={(e) => handleSearch(e.target.value)} />
         </div>
-        {/* Filtros em coluna mobile */}
         <div className="bg-surface border border-border-primary rounded-2xl p-4 flex flex-col gap-6 shadow-sm w-full md:w-auto">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
             <div className="flex items-center gap-4 border-b md:border-b-0 md:border-r border-border-primary pb-4 md:pb-0 md:pr-6">
@@ -423,7 +428,148 @@ export const Headsets = () => {
           </table>
         </div>
       </div>
-      {/* Paginação, Ações em Massa e Modais Omitidos no resumo, mas mantidos no código completo */}
+
+      {headsetsData && headsetsData.pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-surface p-4 rounded-2xl border border-border-primary shadow-sm">
+          <span className="text-xs font-mono text-text-secondary uppercase tracking-widest">Página {page} de {headsetsData.pagination.totalPages}</span>
+          <div className="flex gap-2">
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronLeft size={20} /></button>
+            <button disabled={page >= headsetsData.pagination.totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-xl bg-hover-bg border border-border-primary text-text-secondary hover:text-primary-400 disabled:opacity-30 transition-all"><ChevronRight size={20} /></button>
+          </div>
+        </div>
+      )}
+
+      {selectedHeadsetIds.length > 0 && canManageHeadsets && (
+        <div className="fixed bottom-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-primary-600 text-white p-4 md:px-6 md:py-4 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center gap-4 md:gap-6 border border-primary-400 font-mono">
+            <div className="flex items-center gap-2 border-b md:border-b-0 md:border-r border-primary-400 pb-2 md:pb-0 md:pr-6 w-full md:w-auto justify-center">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">{selectedHeadsetIds.length}</div>
+              <span className="text-sm font-bold uppercase tracking-wider">Selecionados</span>
+            </div>
+            <div className="flex items-center justify-center gap-2 md:gap-3 w-full md:w-auto">
+              <button onClick={() => setIsBulkUpdateModalOpen(true)} className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-white text-primary-600 hover:bg-zinc-100 transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                <Settings2 size={16} /> <span className="hidden xs:inline">Alterar</span>
+              </button>
+              <button onClick={() => setIsBulkDeleteConfirmOpen(true)} className="flex items-center gap-2 px-3 md:px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                <Trash2 size={16} /> <span className="hidden xs:inline">Excluir</span>
+              </button>
+              <button onClick={() => setSelectedHeadsetIds([])} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Modal isOpen={isBulkUpdateModalOpen} onClose={() => !isProcessingBulk && setIsBulkUpdateModalOpen(false)} title={`Atualizar ${selectedHeadsetIds.length} Headsets`}>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status</label>
+              <select className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none" value={bulkData.status} onChange={(e) => setBulkData({ ...bulkData, status: e.target.value as HeadsetStatus })}>
+                <option value="">Manter atual...</option>
+                {Object.entries(STATUS_LABELS).map(([val, { label }]) => ( <option key={val} value={val}>{label}</option> ))}
+              </select>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observação</label>
+            <textarea className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary text-sm font-mono focus:outline-none min-h-[100px] resize-none" value={bulkData.observacoes} onChange={(e) => setBulkData({ ...bulkData, observacoes: e.target.value })} />
+          </div>
+          <button onClick={handleBulkUpdate} disabled={isProcessingBulk} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center gap-2 h-12">
+            {isProcessingBulk ? <Spinner /> : 'Atualizar Itens'}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedHeadset ? 'Editar Headset' : 'Novo Headset'}>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Matrícula (Opcional)</label>
+              <input type="text" className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none" {...register('matricula')} />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Lacre</label>
+              <input type="text" className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none ${errors.lacre ? 'border-red-500' : 'border-border-primary'}`} {...register('lacre')} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Marca</label>
+              <input type="text" className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none ${errors.marca ? 'border-red-500' : 'border-border-primary'}`} {...register('marca')} />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Nº Série (Opcional)</label>
+              <input type="text" className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none" {...register('numeroSerie')} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Status</label>
+            <select className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none ${errors.status ? 'border-red-500' : 'border-border-primary'}`} {...register('status')}>
+              {Object.entries(STATUS_LABELS).map(([val, { label }]) => ( <option key={val} value={val}>{label}</option> ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-mono text-text-secondary uppercase tracking-widest">Observações</label>
+            <textarea className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none min-h-[100px] resize-none" {...register('observacoes')} />
+          </div>
+          <button type="submit" disabled={isCreating || isUpdating} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center h-12">{isCreating || isUpdating ? <Spinner /> : 'Salvar'}</button>
+        </form>
+      </Modal>
+
+      <Modal isOpen={isBulkModalOpen} onClose={handleCloseBulkModal} title="Cadastro de Headsets (.xlsx)">
+        <div className="space-y-6">
+          <div className="p-4 rounded-2xl bg-hover-bg border border-border-primary text-[10px] font-mono text-text-secondary uppercase tracking-widest">Formato: MATRÍCULA | LACRE | MARCA | Nº SÉRIE | STATUS | OBSERVAÇÕES</div>
+          <form onSubmit={onBulkSubmit} className="space-y-6">
+            <div className="relative group">
+              <input type="file" accept=".xlsx" onChange={handleFileUpload} disabled={isParsing || isBulkCreating} className="w-full px-4 py-8 rounded-2xl bg-hover-bg border-2 border-dashed border-border-primary text-text-secondary font-mono text-xs cursor-pointer file:hidden hover:border-primary-500/50 transition-all text-center" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2"><PackagePlus className="text-text-secondary group-hover:text-primary-400 transition-colors" size={24} /><span className="text-[10px] uppercase tracking-widest font-bold">Clique para selecionar .xlsx</span></div>
+            </div>
+            {isParsing && <div className="flex flex-col items-center justify-center py-6 animate-pulse"><Spinner size={24} /><span className="text-[10px] font-mono text-primary-400 uppercase tracking-widest">Processando...</span></div>}
+            {bulkErrors.length > 0 && <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-400 text-[10px] font-mono max-h-[150px] overflow-y-auto">{bulkErrors.map((err, i) => <div key={i}>Linha {err.row}: {err.errors.join(', ')}</div>)}</div>}
+            {parsedHeadsets.length > 0 && bulkErrors.length === 0 && (
+              <button type="submit" disabled={isBulkCreating} className="w-full py-4 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all shadow-glow-purple flex items-center justify-center gap-2 h-14">
+                {isBulkCreating ? <Spinner /> : <><ClipboardList size={18} /> Confirmar Importação ({parsedHeadsets.length})</>}
+              </button>
+            )}
+          </form>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isHistoryModalOpen} onClose={() => { setIsHistoryModalOpen(false); setHeadsetForHistory(null); }} title={`Histórico: ${headsetForHistory?.lacre}`}>
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto no-scrollbar">
+          {isLoadingHistory ? <Spinner /> : headsetHistory?.map((entry) => (
+            <div key={entry.id} className="p-4 rounded-xl bg-hover-bg border border-border-primary text-xs">
+              <div className="flex justify-between font-bold mb-2"><span>{STATUS_LABELS[entry.newStatus]?.label}</span><span>{new Date(entry.createdAt).toLocaleString()}</span></div>
+              {entry.observation && <div className="italic text-text-secondary mb-1">"{entry.observation}"</div>}
+              <div className="text-[10px] opacity-60 uppercase font-mono">Por: {entry.user?.name || 'Sistema'}</div>
+            </div>
+          ))}
+        </div>
+      </Modal>
+
+      <Modal isOpen={isConnectModalOpen} onClose={() => setIsConnectModalOpen(false)} title="Vincular Operador">
+        <div className="space-y-4">
+          <div className="space-y-2"><label className="block text-xs font-mono text-text-secondary uppercase">Matrícula do Operador</label><input type="text" className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none" value={connectMatricula} onChange={(e) => setConnectMatricula(e.target.value)} /></div>
+          <div className="space-y-2"><label className="block text-xs font-mono text-text-secondary uppercase">Observações</label><textarea className="w-full px-4 py-3 rounded-xl bg-hover-bg border border-border-primary text-text-primary font-mono text-sm focus:outline-none min-h-[100px] resize-none" value={connectObservacoes} onChange={(e) => setConnectObservacoes(e.target.value)} /></div>
+          <button onClick={handleConnect} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all h-12 shadow-glow-purple">Vincular</button>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isDisconnectModalOpen} onClose={() => setIsDisconnectModalOpen(false)} title="Desvincular Operador">
+        <div className="space-y-6">
+          <p className="text-sm text-text-secondary text-center">O equipamento será liberado. Qual o estado atual?</p>
+          <div className="grid grid-cols-2 gap-4">
+            <button onClick={() => setDisconnectStatus('DISPONIVEL')} className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${disconnectStatus === 'DISPONIVEL' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-hover-bg border-border-primary text-text-secondary'}`}><ClipboardList size={24} /><span className="text-[10px] font-mono font-bold uppercase">Disponível</span></button>
+            <button onClick={() => setDisconnectStatus('DEFEITO')} className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${disconnectStatus === 'DEFEITO' ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-hover-bg border-border-primary text-text-secondary'}`}><Trash2 size={24} /><span className="text-[10px] font-mono font-bold uppercase">Defeito</span></button>
+          </div>
+          <button onClick={handleDisconnect} className="w-full py-3 rounded-xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase transition-all h-12 shadow-glow-purple">Confirmar Desvínculo</button>
+        </div>
+      </Modal>
+
+      <ConfirmDialog isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} onConfirm={() => selectedHeadset && deleteHeadset(selectedHeadset.id)} title="Excluir Headset" description={`Remover permanentemente o headset ${selectedHeadset?.lacre}?`} />
+      <ConfirmDialog isOpen={isBulkDeleteConfirmOpen} onClose={() => !isProcessingBulk && setIsBulkDeleteConfirmOpen(false)} onConfirm={handleBulkDelete} title={`Excluir ${selectedHeadsetIds.length} Itens`} description="Esta ação não pode ser desfeita." />
     </div>
   );
 };
