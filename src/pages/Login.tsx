@@ -63,17 +63,6 @@ export const Login = () => {
           >
             {isLoggingIn ? <Spinner className="text-white" /> : 'Entrar'}
           </button>
-
-          <p className="text-center text-sm text-text-secondary font-mono">
-            Não tem conta?{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/register')}
-              className="text-primary-500 hover:underline font-bold"
-            >
-              Cadastre-se
-            </button>
-          </p>
         </form>
 
         <p className="text-center text-[10px] font-mono text-text-secondary uppercase tracking-[0.2em] opacity-50">
