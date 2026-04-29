@@ -97,15 +97,17 @@ export const Profile = () => {
                 name={displayName} 
                 avatarUrl={user?.avatarUrl} 
                 size="xl" 
-                className="ring-4 ring-primary-500/10"
+                className={`ring-4 ring-primary-500/10 ${isTester ? 'cursor-default' : ''}`}
               />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploadingAvatar}
-                className="absolute bottom-0 right-0 p-2 rounded-full bg-primary-500 text-white shadow-glow-purple hover:bg-primary-400 transition-all group-hover:scale-110 disabled:opacity-50"
-              >
-                {isUploadingAvatar ? <Spinner size={14} /> : <Camera size={16} />}
-              </button>
+              {!isTester && (
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-0 right-0 p-2 rounded-full bg-primary-500 text-white shadow-glow-purple hover:bg-primary-400 transition-all group-hover:scale-110 disabled:opacity-50"
+                >
+                  {isUploadingAvatar ? <Spinner size={14} /> : <Camera size={16} />}
+                </button>
+              )}
               <input 
                 type="file" 
                 ref={fileInputRef} 
@@ -116,7 +118,7 @@ export const Profile = () => {
             </div>
 
             <div className="space-y-2 w-full">
-              {isEditingName ? (
+              {isEditingName && !isTester ? (
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -143,12 +145,14 @@ export const Profile = () => {
               ) : (
                 <div className="flex items-center justify-center gap-2 group">
                   <h3 className="text-xl font-bold text-text-primary">{displayName}</h3>
-                  <button 
-                    onClick={() => setIsEditingName(true)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-primary-400 transition-all"
-                  >
-                    <Edit2 size={14} />
-                  </button>
+                  {!isTester && (
+                    <button 
+                      onClick={() => setIsEditingName(true)}
+                      className="opacity-0 group-hover:opacity-100 p-1 text-text-secondary hover:text-primary-400 transition-all"
+                    >
+                      <Edit2 size={14} />
+                    </button>
+                  )}
                 </div>
               )}
               <p className="text-[10px] font-mono text-text-secondary uppercase tracking-[0.2em]">
@@ -171,13 +175,18 @@ export const Profile = () => {
           </div>
 
           <div className="bg-surface border border-border-primary rounded-3xl p-6 flex items-start gap-4">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+            <div className={`p-2 rounded-xl ${isTester ? 'bg-red-500/10 text-red-400' : 'bg-amber-500/10 text-amber-400'}`}>
               <Shield size={20} />
             </div>
             <div className="space-y-1">
-              <h4 className="text-sm font-bold text-text-primary font-mono uppercase tracking-tight">Segurança</h4>
+              <h4 className="text-sm font-bold text-text-primary font-mono uppercase tracking-tight">
+                {isTester ? 'Acesso Limitado' : 'Segurança'}
+              </h4>
               <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tighter font-mono">
-                Não compartilhe sua matrícula e senha com ninguém. Toda alteração no estoque fica registrada em seu nome.
+                {isTester 
+                  ? 'Usuários com cargo TESTER não podem alterar dados sensíveis ou de identificação.'
+                  : 'Não compartilhe sua matrícula e senha com ninguém. Toda alteração no estoque fica registrada em seu nome.'
+                }
               </p>
             </div>
           </div>
@@ -193,19 +202,19 @@ export const Profile = () => {
                 <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Alterar Senha de Acesso</h3>
               </div>
               {isTester && (
-                <div className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono font-bold text-amber-400 uppercase animate-pulse">
-                  Restrito
+                <div className="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-[10px] font-mono font-bold text-red-400 uppercase">
+                  Bloqueado
                 </div>
               )}
             </div>
 
             {isTester && (
-              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
-                <div className="mt-0.5 text-amber-500">
+              <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 flex items-start gap-3">
+                <div className="mt-0.5 text-red-500">
                   <Shield size={16} />
                 </div>
-                <p className="text-xs text-amber-200/80 leading-relaxed font-mono uppercase tracking-tighter">
-                  Usuários com cargo <span className="text-amber-400 font-bold">TESTER</span> não podem alterar a própria senha.
+                <p className="text-xs text-red-200/80 leading-relaxed font-mono uppercase tracking-tighter">
+                  Restrição de conta: Usuários de <span className="text-red-400 font-bold">TESTE</span> possuem permissão apenas de leitura em dados de perfil.
                 </p>
               </div>
             )}
