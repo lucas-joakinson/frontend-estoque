@@ -1,25 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationService } from '../services/notification.service';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 
 export const useNotifications = () => {
   const queryClient = useQueryClient();
+  const { hasPermission, isAuthenticated } = useAuth();
+  
+  const canView = isAuthenticated && hasPermission('canViewNotifications');
 
   const summaryQuery = useQuery({
     queryKey: ['notifications', 'summary'],
     queryFn: () => notificationService.getSummary(),
-    refetchInterval: 30000, // 30 seconds
+    refetchInterval: 30000,
+    enabled: canView,
   });
 
   const recentActivitiesQuery = useQuery({
     queryKey: ['notifications', 'activities'],
     queryFn: () => notificationService.getRecentActivities(),
     refetchInterval: 30000,
+    enabled: canView,
   });
 
   const settingsQuery = useQuery({
     queryKey: ['notifications', 'settings'],
     queryFn: () => notificationService.getSettings(),
+    enabled: canView,
   });
 
   const updateSettingsMutation = useMutation({
@@ -53,8 +60,10 @@ export const useNotifications = () => {
     isUpdating: updateSettingsMutation.isPending,
     clearActivities: clearActivitiesMutation.mutate,
     refetch: () => {
-      summaryQuery.refetch();
-      recentActivitiesQuery.refetch();
+      if (canView) {
+        summaryQuery.refetch();
+        recentActivitiesQuery.refetch();
+      }
     },
   };
 };

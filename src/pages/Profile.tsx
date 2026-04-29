@@ -40,6 +40,7 @@ export const Profile = () => {
   const displayName = user?.name || 'Usuário';
   const displayRole = user?.role || 'Operador';
   const displayMatricula = user?.matricula || '---';
+  const isTester = user?.role === 'TESTER';
 
   const onUpdateName = () => {
     if (newName.trim() === user?.name) {
@@ -184,27 +185,47 @@ export const Profile = () => {
 
         <div className="md:col-span-2">
           <div className="bg-surface border border-border-primary rounded-3xl p-8 space-y-8 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary-500/10 text-primary-400">
-                <Key size={20} />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-primary-500/10 text-primary-400">
+                  <Key size={20} />
+                </div>
+                <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Alterar Senha de Acesso</h3>
               </div>
-              <h3 className="text-sm font-bold text-text-primary font-mono uppercase tracking-widest">Alterar Senha de Acesso</h3>
+              {isTester && (
+                <div className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] font-mono font-bold text-amber-400 uppercase animate-pulse">
+                  Restrito
+                </div>
+              )}
             </div>
 
-            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className="space-y-6">
+            {isTester && (
+              <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-3">
+                <div className="mt-0.5 text-amber-500">
+                  <Shield size={16} />
+                </div>
+                <p className="text-xs text-amber-200/80 leading-relaxed font-mono uppercase tracking-tighter">
+                  Usuários com cargo <span className="text-amber-400 font-bold">TESTER</span> não podem alterar a própria senha.
+                </p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmitPassword(onPasswordSubmit)} className={`space-y-6 ${isTester ? 'opacity-50 pointer-events-none' : ''}`}>
               <div className="space-y-2">
                 <label className="block text-[10px] font-mono text-text-secondary uppercase tracking-widest ml-1">Senha Atual</label>
                 <div className="relative group">
                   <input
                     type={showCurrentPassword ? "text" : "password"}
+                    disabled={isTester}
                     className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${passwordErrors.currentPassword ? 'border-red-500' : 'border-border-primary group-focus-within:border-primary-500/50'}`}
                     placeholder="••••••••"
                     {...registerPassword('currentPassword')}
                   />
                   <button
                     type="button"
+                    disabled={isTester}
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-0"
                   >
                     {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -218,14 +239,16 @@ export const Profile = () => {
                   <div className="relative group">
                     <input
                       type={showNewPassword ? "text" : "password"}
+                      disabled={isTester}
                       className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${passwordErrors.newPassword ? 'border-red-500' : 'border-border-primary group-focus-within:border-primary-500/50'}`}
                       placeholder="••••••••"
                       {...registerPassword('newPassword')}
                     />
                     <button
                       type="button"
+                      disabled={isTester}
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-0"
                     >
                       {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -238,14 +261,16 @@ export const Profile = () => {
                   <div className="relative group">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
+                      disabled={isTester}
                       className={`w-full px-4 py-3 rounded-xl bg-hover-bg border text-text-primary font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/50 transition-all ${passwordErrors.confirmPassword ? 'border-red-500' : 'border-border-primary group-focus-within:border-primary-500/50'}`}
                       placeholder="••••••••"
                       {...registerPassword('confirmPassword')}
                     />
                     <button
                       type="button"
+                      disabled={isTester}
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-0"
                     >
                       {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -257,12 +282,12 @@ export const Profile = () => {
               <div className="pt-4">
                 <button
                   type="submit"
-                  disabled={isChangingPassword}
+                  disabled={isChangingPassword || isTester}
                   className="w-full py-4 rounded-2xl bg-primary-500 hover:bg-primary-400 text-white font-mono font-bold uppercase tracking-widest transition-all shadow-glow-purple flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group"
                 >
                   {isChangingPassword ? <Spinner /> : (
                     <>
-                      <span>Atualizar Senha</span>
+                      <span>{isTester ? 'Acesso Restrito' : 'Atualizar Senha'}</span>
                       <Shield size={18} className="group-hover:scale-110 transition-transform" />
                     </>
                   )}

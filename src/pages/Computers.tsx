@@ -242,9 +242,11 @@ export const Computers = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
-                <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
-                  <input type="checkbox" className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" checked={!!(computersData?.computers && computersData.computers.length > 0 && selectedComputerIds.length === computersData.computers.length)} onChange={toggleSelectAllComputers} />
-                </th>
+                {canManageComputers && (
+                  <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                    <input type="checkbox" className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" checked={!!(computersData?.computers && computersData.computers.length > 0 && selectedComputerIds.length === computersData.computers.length)} onChange={toggleSelectAllComputers} />
+                  </th>
+                )}
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Patrimônio</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Hostname</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary text-center">Status</th>
@@ -255,7 +257,7 @@ export const Computers = () => {
             <tbody className="divide-y divide-border-primary">
               {isLoading ? Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
+                  {canManageComputers && <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>}
                   <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-6 py-4"><Skeleton className="h-4 w-32" /></td>
                   <td className="px-6 py-4 text-center"><Skeleton className="h-6 w-24 mx-auto" /></td>
@@ -264,7 +266,7 @@ export const Computers = () => {
                 </tr>
               )) : computersData?.computers.map((comp) => (
                 <tr key={comp.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedComputerIds.includes(comp.id) ? 'bg-primary-500/5' : ''}`}>
-                  <td className="px-6 py-4 text-center"><input type="checkbox" checked={selectedComputerIds.includes(comp.id)} onChange={() => toggleSelectOneComputer(comp.id)} /></td>
+                  {canManageComputers && <td className="px-6 py-4 text-center"><input type="checkbox" checked={selectedComputerIds.includes(comp.id)} onChange={() => toggleSelectOneComputer(comp.id)} /></td>}
                   <td className="px-6 py-4 text-sm font-bold text-text-primary"><span className="px-2 py-1 rounded bg-hover-bg border border-border-primary font-mono text-xs">{comp.patrimonio}</span></td>
                   <td className="px-6 py-4 text-sm font-mono text-primary-400">{comp.hostname}</td>
                   <td className="px-6 py-4 text-center"><span className={`px-2 py-1 rounded-full text-[10px] font-mono font-bold border ${STATUS_LABELS[comp.status]?.color || 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20'}`}>{STATUS_LABELS[comp.status]?.label || 'Desconhecido'}</span></td>

@@ -495,9 +495,11 @@ export const Users = () => {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-hover-bg">
                   <tr>
-                    <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
-                      <input type="checkbox" checked={!!(usersData?.users && usersData.users.length > 0 && selectedUserIds.length === usersData.users.length)} onChange={toggleSelectAllUsers} />
-                    </th>
+                    {canManageUsers && (
+                      <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                        <input type="checkbox" checked={!!(usersData?.users && usersData.users.length > 0 && selectedUserIds.length === usersData.users.length)} onChange={toggleSelectAllUsers} />
+                      </th>
+                    )}
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Usuário</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Matrícula</th>
                     <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Cargo</th>
@@ -509,7 +511,7 @@ export const Users = () => {
                   {isUsersLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i}>
-                        <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
+                        {canManageUsers && <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>}
                         <td className="px-6 py-4 flex items-center gap-3"><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-4 w-32" /></td>
                         <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
                         <td className="px-6 py-4"><Skeleton className="h-6 w-20" /></td>
@@ -520,9 +522,11 @@ export const Users = () => {
                   ) : usersData?.users && usersData.users.length > 0 ? (
                     usersData.users.map((user: User) => (
                       <tr key={user.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 group ${selectedUserIds.includes(user.id) ? 'bg-primary-500/5' : ''}`}>
-                        <td className="px-6 py-4 text-center">
-                          <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleSelectOneUser(user.id)} />
-                        </td>
+                        {canManageUsers && (
+                          <td className="px-6 py-4 text-center">
+                            <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleSelectOneUser(user.id)} />
+                          </td>
+                        )}
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             <Avatar name={user.name} avatarUrl={user.avatarUrl} size="sm" />
@@ -555,7 +559,6 @@ export const Users = () => {
               </table>
             </div>
           </div>
-          {/* Paginação e Ações em Massa ocultados para brevidade, mas mantidos no código real */}
         </>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-in slide-in-from-bottom-4 duration-500">

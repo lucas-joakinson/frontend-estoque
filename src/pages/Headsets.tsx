@@ -377,9 +377,11 @@ export const Headsets = () => {
           <table className="w-full text-left border-collapse">
             <thead className="bg-hover-bg">
               <tr>
-                <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
-                  <input type="checkbox" className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" checked={!!(headsetsData?.headsets && headsetsData.headsets.length > 0 && selectedHeadsetIds.length === headsetsData.headsets.length)} onChange={toggleSelectAllHeadsets} />
-                </th>
+                {canManageHeadsets && (
+                  <th className="w-12 px-6 py-4 border-b border-border-primary text-center">
+                    <input type="checkbox" className="w-4 h-4 rounded border-border-primary/50 bg-zinc-800/50 accent-primary-500 cursor-pointer transition-all" checked={!!(headsetsData?.headsets && headsetsData.headsets.length > 0 && selectedHeadsetIds.length === headsetsData.headsets.length)} onChange={toggleSelectAllHeadsets} />
+                  </th>
+                )}
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Matrícula</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Lacre</th>
                 <th className="px-6 py-4 text-[10px] font-mono text-text-secondary uppercase tracking-widest border-b border-border-primary">Marca</th>
@@ -390,7 +392,7 @@ export const Headsets = () => {
             <tbody className="divide-y divide-border-primary">
               {isLoading ? Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>
+                  {canManageHeadsets && <td className="px-6 py-4"><Skeleton className="h-4 w-4 mx-auto" /></td>}
                   <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-6 py-4"><Skeleton className="h-4 w-20" /></td>
                   <td className="px-6 py-4"><Skeleton className="h-4 w-24" /></td>
@@ -399,7 +401,7 @@ export const Headsets = () => {
                 </tr>
               )) : headsetsData?.headsets.map((headset) => (
                 <tr key={headset.id} className={`hover:bg-hover-bg transition-colors border-b border-border-primary last:border-0 ${selectedHeadsetIds.includes(headset.id) ? 'bg-primary-500/5' : ''}`}>
-                  <td className="px-6 py-4 text-center"><input type="checkbox" checked={selectedHeadsetIds.includes(headset.id)} onChange={() => toggleSelectOneHeadset(headset.id)} /></td>
+                  {canManageHeadsets && <td className="px-6 py-4 text-center"><input type="checkbox" checked={selectedHeadsetIds.includes(headset.id)} onChange={() => toggleSelectOneHeadset(headset.id)} /></td>}
                   <td className="px-6 py-4 text-sm font-bold text-text-primary">{headset.matricula || <span className="text-text-secondary/40 italic">---</span>}</td>
                   <td className="px-6 py-4 text-xs font-mono text-text-secondary uppercase">{headset.lacre}</td>
                   <td className="px-6 py-4 text-sm text-text-primary">{headset.marca}</td>
